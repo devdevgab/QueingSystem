@@ -1,8 +1,10 @@
-import express from 'express'
-import bodyParser from 'body-parser'
-import session from 'express-session';
+import express from 'express';
+import bodyParser from 'body-parser';
 import cors from 'cors';
-import { createTransaction, updateTransaction,displayTransactions,deleteTransaction, createUser,updateUser } from './database.js';
+import session from 'express-session';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+import { createTransaction, updateTransaction,displayTransactions,deleteTransaction,verifiyToken, createUser,updateUser,getUserIP,lockIP,validateUser } from './database.js';
 
 
 
@@ -20,6 +22,7 @@ const app = express()
 // app.use(cors());
 app.use(bodyParser.json())
 
+dotenv.config();
 
 
     
@@ -33,24 +36,96 @@ const corsOptions = {
   app.use(cors(corsOptions));
 
 
+app.use(bodyParser.json());
 
-app.use(cors(corsOptions));
-// app.options('*', cors(corsOptions));
-
-app.use(
-    session({
-      secret: "your_secret_key",
-      resave: false, // Avoid unnecessary session saves
-      saveUninitialized: false, // Prevent empty sessions from being created
-      cookie: {
-        secure: false, // Set `true` if using HTTPS
-        httpOnly: true, // Prevent client-side access
-        sameSite: "Lax", // Required for cross-origin cookies
-      },
-    })
-  );
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        secure: false, // ✅ Change to true if using HTTPS
+        httpOnly: false, // ✅ Try setting to false for debugging
+        sameSite: "lax", // ✅ Change to "none" if frontend is on a different origin
+        maxAge: 60 * 60 * 1000 // 1 hour
+    }
+}));
 
 
+
+// try {
+//     const decoded = jwt.verify(token, secretKey);
+//     console.log("JWT is valid:", decoded);
+// } catch (err) {
+//     console.log("JWT is invalid:", err.message);
+// }
+
+
+
+
+app.post("/login", async (req, res) => {
+    const { Username, Password } = req.body;
+
+    try {
+        const realIP = getUserIP(req);
+        console.log(`User Login Attempt from IP: ${realIP}`);
+        
+
+        const payload = {
+            
+            name: "gabriel"
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
+        const validResult = await verifiyToken(token)
+        console.log("hello",validResult);
+
+        if(validResult){
+            console.log("Token is legal")
+            const user = await validateUser(Username, Password);
+            if (!user) {
+                return res.status(401).json({ message: "Invalid username or password" });
+            }
+            req.session.user = {
+                //add details here for now ill add static data
+                user,
+                token: token
+ 
+            };
+            // console.log("Session Created:", req.session.user.user.Name, req.session.user.user.LastName, req.session.user.token);   
+            res.status(200).json({
+                message: "Login successful",
+                token
+            });
+
+
+
+            
+        }
+        else{
+            console.log("Token is not legal")
+            return res.status(401).json({ message: "Invalid Token" });
+            
+        }
+
+        
+        // if (!user) {
+        //     return res.status(401).json({ message: "Invalid username or password" });
+        // }
+
+        
+    
+        
+
+        
+
+
+
+
+    } catch (error) {
+        console.error("Login Error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 
 
 
@@ -105,20 +180,32 @@ app.put("/update-transaction/:id", async (req, res) => {
 });
 
 app.get("/display-transactions", async (req, res) => {
-    // const userRole = req.session.role;
+    if (!req.session.user) {
+        return res.status(401).json({ message: "Unauthorized: No active session" });
+    }
 
-    // if (userRole != 2) {
-    //     return res.status(401).json({ message: 'Unauthorized: Admin access required' });
-    // }
+    const token = req.session.user.token;
+    const validResult = await verifiyToken(token);
 
     try {
-        const transactions = await displayTransactions();
-        res.status(200).send({ transactions });
+        let transactions = []; // ✅ Declare transactions outside of the block
+
+        if (validResult) {
+            console.log("Token is legal");
+            transactions = await displayTransactions(); // ✅ Assign transactions here
+        } else {
+            console.log("Token is not legal");
+            return res.status(401).json({ message: "Invalid Token" });
+        }
+        console.log(req.session.user)
+        res.status(200).json({ transactions }); // ✅ Send response after transactions is assigned
+
     } catch (error) {
         console.error(error);
         res.status(500).send("Internal server error");
     }
 });
+
 
 
 app.put("/delete-transaction/:id", async (req, res) => {
@@ -152,8 +239,9 @@ app.put("/delete-transaction/:id", async (req, res) => {
 
 
 
+
 app.post("/create-user", async (req, res)=>{
-    const userRole = req.session.role;
+    // const userRole = req.session.role;
     const {Name, LastName, Username, Password, TellerNumber} = req.body
 
     if (!Name || !LastName || !Username || !Password || !TellerNumber) {
@@ -204,6 +292,33 @@ app.put("/update-user/:id", async (req, res) => {
 });
 
 
+//get user ip route
+app.get("/get-user-ip", (req, res) => {
+    const userIP = getUserIP(req);
+    res.json({ ip: userIP });
+  });
+
+app.get("/lockIp", (req, res) => {
+    const message = lockIP(req); // Pass `req` to `lockIP`
+    res.json({ message });
+  });
+
+
+
+
+
+
+
+
+// there will be 4 view page, one for each teller machine
+// logic will be when the computer operator confirmed the user designation ie Withdrawal, Deposit etc.
+// the web will then automatically chooses what view will be the teller machine. 
+// 
+
+
+
+
+
 
 
 
@@ -223,3 +338,5 @@ app.use((err, req, res, next) => {
   app.listen(port, ip, () => {
     console.log('running on 8080')
   })
+
+

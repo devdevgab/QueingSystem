@@ -1,17 +1,10 @@
 // import axios from 'axios';
+import bcrypt from 'bcryptjs';
 import sql from 'mssql';
-import dotenv from 'dotenv'
-dotenv.config()
-
-// const sql = require('mssql');
-
-// const pool = mysql.createPool({
-//     host: process.env.MYSQL_HOST,
-//     user: process.env.MYSQL_USER,
-//     password: process.env.MYSQL_PASSWORD,
-//     database: process.env.MYSQL_DATABASE
-// }).promise()
-
+import dotenv from 'dotenv';
+import os from "os";
+import jwt from 'jsonwebtoken';
+dotenv.config();
 
 const pool = new sql.ConnectionPool({
     user: process.env.SQLSERVER_USER,
@@ -20,20 +13,52 @@ const pool = new sql.ConnectionPool({
     port: parseInt(process.env.SQLSERVER_PORT),
     database: process.env.SQLSERVER_DATABASE,
     options: {
-        encrypt: true, // Use encryption (recommended for Azure SQL)
-        trustServerCertificate: true // Set to true if using self-signed certificates
+        encrypt: true,
+        trustServerCertificate: true
     }
 });
 
 // const poolConnect = pool.connect(); // Connect to the SQL Server database
 
 pool.connect()
-    .then(() => {
-        console.log("Connected to SQL Server");
-    })
-    .catch(err => {
-        console.error("Connection failed: ", err);
-    });
+    .then(() => console.log("Connected to SQL Server"))
+    .catch(err => console.error("Connection failed:", err));
+
+
+  
+
+    export async function validateUser(Username, Password) {
+        try {
+            const result = await pool.request()
+                .input('Username', sql.VarChar, Username)
+                .query(`SELECT * FROM tbl_Users WHERE Username = @Username`);
+    
+            if (result.recordset.length === 0) return null; // User not found
+    
+            const user = result.recordset[0];
+    
+            // Compare hashed password
+            const isMatch = await bcrypt.compare(Password, user.Password);
+            if (!isMatch) return null;
+    
+            return user;
+        } catch (error) {
+            throw error;
+        }
+    }
+export async function verifiyToken(result){
+    const secretToken = "heehehe"
+    try {
+        const decoded = jwt.verify(result,process.env.JWT_SECRET );
+        console.log("JWT is valid:", decoded);
+        const answer = true
+        return answer
+    } catch (err) {
+        console.log("JWT is invalid:", err.message, "hmmm", result);
+        const answer = false
+        return answer
+    }
+}
 
 
 
@@ -113,18 +138,20 @@ export async function deleteTransaction(id, {DeleteStatus}){
     }
 }
 
-export async function createUser(Name, LastName, Username, Password, TellerNumber){
+export async function createUser(Name, LastName, Username, Password, TellerNumber) {
     try {
+        const hashedPassword = await bcrypt.hash(Password, 10); // Hash password
+
         const result = await pool.request()
             .input('Name', sql.VarChar, Name)
             .input('LastName', sql.VarChar, LastName)
             .input('Username', sql.VarChar, Username)
-            .input('Password', sql.VarChar, Password)
+            .input('Password', sql.VarChar, hashedPassword) // Store hashed password
             .input('TellerNumber', sql.Int, TellerNumber)
             .query(`
-            INSERT INTO tbl_Users (Name, LastName, Username, Password, TellerNumber)
-            VALUES (@Name, @LastName, @Username, @Password, @TellerNumber);
-            SELECT SCOPE_IDENTITY() AS UserId;
+                INSERT INTO tbl_Users (Name, LastName, Username, Password, TellerNumber)
+                VALUES (@Name, @LastName, @Username, @Password, @TellerNumber);
+                SELECT SCOPE_IDENTITY() AS UserId;
             `);
 
         return result.recordset[0];
@@ -159,3 +186,34 @@ export async function updateUser(ID, {Name, LastName, Username, Password}) {
         throw error;
     }
 }
+
+export const getUserIP = (req) => {
+    const forwarded = req.headers["x-forwarded-for"];
+    return forwarded ? forwarded.split(",")[0] : req.socket.remoteAddress;
+  };
+  
+  // Function to check if the user is Teller One
+export const lockIP = (req) => {
+    const deviceIP = getUserIP(req);
+    const tellerOne ="192.168.10.62";
+    const tellerTwo ="192.168.10.166";
+    const tellerThree ="192.168.10.51";
+    const tellerFour ="192.168.10.61";
+
+    if (deviceIP === tellerOne) {
+      return "Device is Teller One";
+
+
+    } else if (deviceIP === tellerTwo) {
+      return "Device is Teller Two";
+      
+    } else if (deviceIP === tellerThree) {
+      return "Device is Teller Three";
+      
+    } else if (deviceIP === tellerFour) {
+      return "Device is Teller Four";
+      
+    }else{
+        return "Device is not a Teller Machine";
+    }
+  };
