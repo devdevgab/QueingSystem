@@ -95,9 +95,11 @@ app.post("/login", async (req, res) => {
             res.status(200).json({
                 message: "Login successful",
                 token
-            });
+            }); 
 
+            
 
+            
 
             
         }
@@ -107,7 +109,13 @@ app.post("/login", async (req, res) => {
             
         }
 
-        
+        // const user = await validateUser(Username, Password);{
+        // if (!user) {
+        //     return res.status(401).json({ message: "Invalid username or password" });
+        // }
+        // req.session.user = {
+    //}
+         
         // if (!user) {
         //     return res.status(401).json({ message: "Invalid username or password" });
         // }
