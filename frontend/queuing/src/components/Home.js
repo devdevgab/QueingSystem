@@ -1,81 +1,55 @@
-import React from "react";
-import Box from '@mui/material/Box';
-import { DataGrid } from '@mui/x-data-grid';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
+import '../css/HomeStyles.css';
+import myTransactionsIcon from '../assets/icons/my-transactions.svg';
+import transactionsIcon from '../assets/icons/transactions.svg';
 
-// Define columns
-const columns = [
-  { field: 'id', headerName: 'ID', width: 90 },
-  {
-    field: 'firstName',
-    headerName: 'First name',
-    width: 150,
-    editable: true,
-  },
-  {
-    field: 'lastName',
-    headerName: 'Last name',
-    width: 150,
-    editable: true,
-  },
-  {
-    field: 'age',
-    headerName: 'Age',
-    type: 'number',
-    width: 110,
-    editable: true,
-  },
-  {
-    field: 'fullName',
-    headerName: 'Full name',
-    description: 'This column has a value getter and is not sortable.',
-    sortable: false,
-    width: 160,
-    valueGetter: (params) => {
-      // Log params to see what is being passed
-      console.log('Params:', params);
-      // Ensure params.row exists before accessing its properties
-      if (params && params.row) {
-        return `${params.row.firstName || ''} ${params.row.lastName || ''}`;
-      }
-      return ''; // Return empty string if row is undefined
-    },
-  },
-];
-
-
-// Define rows data
-const rows = [
-  { id: 1, lastName: 'Snow', firstName: 'Jon', age: 14 },
-  { id: 2, lastName: 'Lannister', firstName: 'Cersei', age: 31 },
-  { id: 3, lastName: 'Lannister', firstName: 'Jaime', age: 31 },
-  { id: 4, lastName: 'Stark', firstName: 'Arya', age: 11 },
-  { id: 5, lastName: 'Targaryen', firstName: 'Daenerys', age: null },
-  { id: 6, lastName: 'Melisandre', firstName: null, age: 150 },
-  { id: 7, lastName: 'Clifford', firstName: 'Ferrara', age: 44 },
-  { id: 8, lastName: 'Frances', firstName: 'Rossini', age: 36 },
-  { id: 9, lastName: 'Roxie', firstName: 'Harvey', age: 65 },
-];
-
-// Define Home component
 const Home = () => {
+  const { isDarkMode } = useTheme();
+
+  const getUserRole = () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.role;
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      return null;
+    }
+  };
+
+  const userRole = getUserRole();
+
   return (
-    <Box sx={{ height: 400, width: '100%' }}>
-      <h2>Welcome to the Home Page</h2>
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        initialState={{
-          pagination: {
-            paginationModel: {
-              pageSize: 5,
-            },
-          },
-        }}
-        pageSizeOptions={[5]}
-        checkboxSelection
-        disableRowSelectionOnClick
-      />
-    </Box>
+    <div className="home-container">
+      <h1 className="home-title">Queuing System</h1>
+
+      <div className="home-cards-container">
+        {userRole !== 'computer_operator' ? (
+          <>
+            <Link to="/mytransactions" className="home-card">
+              <img src={myTransactionsIcon} alt="My Transactions" className="home-card-icon" />
+              <h2>My Transactions</h2>
+              <p>View and manage your transactions</p>
+            </Link>
+
+            <Link to="/transactions" className="home-card">
+              <img src={transactionsIcon} alt="All Transactions" className="home-card-icon" />
+              <h2>All Transactions</h2>
+              <p>View all system transactions</p>
+            </Link>
+          </>
+        ) : (
+          <Link to="/computer-operator" className="home-card">
+            <img src={transactionsIcon} alt="Computer Operator" className="home-card-icon" />
+            <h2>Computer Operator</h2>
+            <p>Create and manage transactions</p>
+          </Link>
+        )}
+      </div>
+    </div>
   );
 };
 

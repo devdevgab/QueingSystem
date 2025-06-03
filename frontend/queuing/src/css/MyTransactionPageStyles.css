@@ -1,0 +1,443 @@
+:root {
+  /* Light theme (default) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #2d3748;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+  --border-color: #e2e8f0;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --hover-bg: #ebf8ff;
+  --modal-bg: #ffffff;
+  --modal-overlay: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #1a1f2e;
+  --bg-secondary: #2d3748;
+  --bg-tertiary: #2a3441;
+  --text-primary: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --text-muted: #718096;
+  --border-color: #4a5568;
+  --shadow-color: rgba(0, 0, 0, 0.2);
+  --hover-bg: #3a4a5e;
+  --modal-bg: #2d3748;
+  --modal-overlay: rgba(0, 0, 0, 0.75);
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.container {
+  padding: 30px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.theme-toggle {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: none;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.container h2 {
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #4299e1;
+  text-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.transaction-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 20px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.transaction-table th,
+.transaction-table td {
+  padding: 20px 30px;
+  text-align: left;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.transaction-table th {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.transaction-table tr:last-child td {
+  border-bottom: none;
+}
+
+.transaction-table tr:nth-child(even) {
+  background-color: var(--bg-secondary);
+}
+
+.transaction-table tr:nth-child(odd) {
+  background-color: var(--bg-tertiary);
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clickable-row:hover {
+  background-color: var(--hover-bg) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--modal-overlay);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+.modal-content {
+  background-color: var(--modal-bg);
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px var(--shadow-color);
+  width: 90%;
+  max-width: 550px;
+  animation: modalFadeIn 0.3s ease;
+  border: 1px solid var(--border-color);
+  z-index: 1001;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.modal-header h3 {
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close-button:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-tertiary);
+}
+
+.transaction-details {
+  margin-bottom: 25px;
+}
+
+.transaction-details p {
+  margin: 14px 0;
+  font-size: 15px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+}
+
+.transaction-details p strong {
+  color: var(--text-primary);
+  min-width: 160px;
+  font-weight: 600;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 24px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid var(--border-color);
+}
+
+.action-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.action-button:first-child {
+  background-color: #4299e1;
+  color: white;
+}
+
+.action-button:last-child {
+  background-color: #48bb78;
+  color: white;
+}
+
+.action-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--shadow-color);
+  filter: brightness(1.1);
+}
+
+.action-button:active {
+  transform: translateY(0);
+}
+
+/* Loading and Empty States */
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--shadow-color);
+  border: 1px solid var(--border-color);
+}
+
+/* Status Colors */
+.status-pending {
+  color: #f6ad55;
+}
+
+.status-completed {
+  color: #48bb78;
+}
+
+.status-failed {
+  color: #f56565;
+}
+
+/* Status colors for table cells */
+.status-in-progress,
+.status-open,
+.status-closed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 2px;
+  min-width: 70px;
+  box-sizing: border-box;
+  padding-top: 0;
+  padding-bottom: 0;
+  height: 22px;
+}
+
+.status-in-progress {
+  background-color: #3b82f6;
+  color: white;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 0.8em;
+  line-height: 1.1;
+  box-shadow: none;
+  letter-spacing: 0.3px;
+}
+
+.status-open {
+  background-color: #10b981;
+  color: white;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 0.8em;
+  line-height: 1.1;
+  box-shadow: none;
+  letter-spacing: 0.3px;
+}
+
+.status-closed {
+  background-color: #ef4444;
+  color: white;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 0.8em;
+  line-height: 1.1;
+  box-shadow: none;
+  letter-spacing: 0.3px;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 25px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  z-index: 2000;
+  animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-out 2.7s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.toast-notification.success {
+  background-color: #48bb78;
+}
+
+.toast-notification.error {
+  background-color: #f56565;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #4299e1;
+}
+
+.last-update {
+  font-size: 14px;
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  padding: 6px 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.toast-notification.info {
+  background-color: #4299e1;
+}
+
+.transaction-table td.status-cell {
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* Remove row background colors by status */
+/* Remove badge backgrounds from status cell */

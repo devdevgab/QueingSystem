@@ -4,8 +4,8 @@ import cors from 'cors';
 import session from 'express-session';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { createTransaction, updateTransaction,displayTransactions,deleteTransaction,verifiyToken, createUser,updateUser,getUserIP,lockIP,validateUser } from './database.js';
-
+import { createTransaction, updateTransaction, displayTransactions, displayTellerOneTransactions, deleteTransaction, displayMyTransactions, verifiyToken, createUser, updateUser, getUserIP, lockIP, validateUser, updateTransactionStatus, displayTellerTwoTransactions, displayTellerThreeTransactions, displayTellerFourTransactions, createWithdrawalTransaction } from './database.js';
+import { authenticateToken } from './middleware/authMiddleware.js'; // adjust path if needed
 
 
 //WHOEVER TAKES OVER THIS CODE PLEASE MAKE SURE TO CHANGE THE IP ADDRESS TO THE SERVER IP ADDRESS THIS CAN BE DONE ON THE LEFT
@@ -20,20 +20,29 @@ import { createTransaction, updateTransaction,displayTransactions,deleteTransact
 const app = express()
 
 // app.use(cors());
-app.use(bodyParser.json())
+app.use(bodyParser.json({
+    limit: '50mb',
+    extended: true,
+    charset: 'utf-8'
+}));
+app.use(bodyParser.urlencoded({
+    limit: '50mb',
+    extended: true,
+    charset: 'utf-8'
+}));
 
 dotenv.config();
 
 
-    
+
 
 const corsOptions = {
     origin: "http://192.168.10.245:3000", // Allow your frontend origin
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true, // Critical: Allows cookies to be sent
-  };
-  app.use(cors(corsOptions));
+};
+app.use(cors(corsOptions));
 
 
 app.use(bodyParser.json());
@@ -66,69 +75,62 @@ app.post("/login", async (req, res) => {
     const { Username, Password } = req.body;
 
     try {
+        var tellerNumber = 0;
         const realIP = getUserIP(req);
+        if (realIP == "192.168.10.245" || realIP == "192.168.10.237" || realIP == "192.168.10.115") {
+            tellerNumber = "1"
+        }
+        else if (realIP == "192.168.10.153") {
+            tellerNumber = "2"
+        }
+        else if (realIP == "192.168.10.154") {
+            tellerNumber = "3"
+        }
+        else if (realIP == "192.168.10.166") {
+            tellerNumber = "4"
+        }
+        else if (realIP == "192.168.10.245" || realIP == "192.168.10.115") {
+            tellerNumber = "5" // Computer Operator
+        }
+
         console.log(`User Login Attempt from IP: ${realIP}`);
-        
+
 
         const payload = {
-            
-            name: "gabriel"
+            name: "gabriel",
+            ip: realIP,
+            tellerNumber: tellerNumber,
+            role: tellerNumber === "5" ? "computer_operator" : "teller"
         };
 
-        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
-        const validResult = await verifiyToken(token)
-        console.log("hello",validResult);
 
-        if(validResult){
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+        const validResult = await verifiyToken(token)
+        console.log("hello", validResult);
+
+        if (validResult) {
             console.log("Token is legal")
             const user = await validateUser(Username, Password);
             if (!user) {
                 return res.status(401).json({ message: "Invalid username or password" });
             }
             req.session.user = {
-                //add details here for now ill add static data
                 user,
                 token: token
- 
             };
-            // console.log("Session Created:", req.session.user.user.Name, req.session.user.user.LastName, req.session.user.token);   
+
             res.status(200).json({
                 message: "Login successful",
-                token
-            }); 
-
-            
-
-            
-
-            
+                token,
+                role: payload.role
+            });
         }
-        else{
+        else {
             console.log("Token is not legal")
             return res.status(401).json({ message: "Invalid Token" });
-            
         }
-
-        // const user = await validateUser(Username, Password);{
-        // if (!user) {
-        //     return res.status(401).json({ message: "Invalid username or password" });
-        // }
-        // req.session.user = {
-    //}
-         
-        // if (!user) {
-        //     return res.status(401).json({ message: "Invalid username or password" });
-        // }
-
-        
-    
-        
-
-        
-
-
-
-
     } catch (error) {
         console.error("Login Error:", error);
         res.status(500).json({ message: "Internal server error" });
@@ -138,21 +140,63 @@ app.post("/login", async (req, res) => {
 
 
 
-app.post("/create-transaction", async (req, res) => {
-    const userRole = req.session.role;
-    const { AccountNumber, Name, TransactionType } = req.body;
+
+
+app.post("/create-transaction", authenticateToken, async (req, res) => {
+    const { AccountNumber, Name, TransactionType, Amount, AccountType, DepositType, PaymentType, DisbursementType } = req.body;
     const DeleteStatus = 0;
 
-    if (!AccountNumber || !Name || !TransactionType) {
+    // Basic validation for all transactions
+    if (!AccountNumber || !Name || !TransactionType || !Amount || !AccountType) {
         return res.status(400).send("Missing required fields");
     }
 
-    // if (userRole != 2) {
-    //     return res.status(401).json({ message: 'Unauthorized: Admin access required' });
-    // }
+    // Validate Amount is a valid number
+    if (isNaN(Amount) || !Number.isInteger(Number(Amount)) || Number(Amount) <= 0) {
+        return res.status(400).send("Amount must be a positive integer");
+    }
+    if (isNaN(AccountNumber) || !Number.isInteger(Number(AccountNumber)) || Number(AccountNumber) <= 0) {
+        return res.status(400).send("Account Number must be a positive integer");
+    }
+
+    // Type-specific validation
+    switch (TransactionType) {
+        case 'Deposit':
+            if (!DepositType) {
+                return res.status(400).send("Deposit type is required for deposit transactions");
+            }
+            break;
+        case 'Payment':
+            if (!PaymentType) {
+                return res.status(400).send("Payment type is required for payment transactions");
+            }
+            break;
+        case 'Disbursement':
+            if (!DisbursementType) {
+                return res.status(400).send("Disbursement type is required for disbursement transactions");
+            }
+            break;
+    }
     
     try {
-        const transaction = await createTransaction(AccountNumber, Name, TransactionType, DeleteStatus);
+        // Get teller number from the authenticated user (set by middleware)
+        const tellerNumber = req.user.tellerNumber;
+
+        if (!tellerNumber) {
+            return res.status(401).send("Unauthorized: Teller number not found");
+        }
+
+        const transaction = await createTransaction(
+            AccountNumber,
+            Name,
+            TransactionType,
+            DeleteStatus,
+            Amount,
+            AccountType,
+            DepositType,
+            PaymentType,
+            DisbursementType
+        );
         res.status(201).send({ transaction });
     } catch (error) {
         console.error(error);
@@ -165,7 +209,7 @@ app.put("/update-transaction/:id", async (req, res) => {
 
     const { id } = req.params;
 
-    const {AccountNumber, Name, TransactionType } = req.body;
+    const { AccountNumber, Name, TransactionType } = req.body;
 
     if (!AccountNumber || !Name || !TransactionType) {
         return res.status(400).send("Missing required fields");
@@ -176,7 +220,7 @@ app.put("/update-transaction/:id", async (req, res) => {
     // }
 
     try {
-        const updatedTransaction = await updateTransaction(id,{AccountNumber, Name, TransactionType});
+        const updatedTransaction = await updateTransaction(id, { AccountNumber, Name, TransactionType });
         if (!updatedTransaction) {
             return res.status(404).send("Transaction not found");
         }
@@ -185,34 +229,67 @@ app.put("/update-transaction/:id", async (req, res) => {
         console.error(error);
         res.status(500).send("Internal server error");
     }
+
+    
 });
 
-app.get("/display-transactions", async (req, res) => {
-    if (!req.session.user) {
-        return res.status(401).json({ message: "Unauthorized: No active session" });
-    }
+// app.get("/display-transactions", authenticateToken,async (req, res) => {
+//     if (!req.session.user) {
+//         return res.status(401).json({ message: "Unauthorized: No active session" });
+//     }
 
-    const token = req.session.user.token;
-    const validResult = await verifiyToken(token);
+//     const token = req.session.user.token;
+//     const validResult = await verifiyToken(token);
 
+//     try {
+//         let transactions = []; // ✅ Declare transactions outside of the block
+
+//         if (validResult) {
+//             console.log("Token is legal");
+//             transactions = await displayTransactions(); // ✅ Assign transactions here
+//         } else {
+//             console.log("Token is not legal");
+//             return res.status(401).json({ message: "Invalid Token" });
+//         }
+//         console.log(req.session.user)
+//         res.status(200).json({ transactions }); // ✅ Send response after transactions is assigned
+
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).send("Internal server error");
+//     }
+// });
+
+
+app.get("/display-transactions", authenticateToken, async (req, res) => {
     try {
-        let transactions = []; // ✅ Declare transactions outside of the block
+        console.log("Authenticated user:", req.user); // req.user was attached by middleware
 
-        if (validResult) {
-            console.log("Token is legal");
-            transactions = await displayTransactions(); // ✅ Assign transactions here
-        } else {
-            console.log("Token is not legal");
-            return res.status(401).json({ message: "Invalid Token" });
-        }
-        console.log(req.session.user)
-        res.status(200).json({ transactions }); // ✅ Send response after transactions is assigned
+        const transactions = await displayTransactions(); // Your DB call or service
 
+
+        res.status(200).json({ transactions });
     } catch (error) {
-        console.error(error);
-        res.status(500).send("Internal server error");
+        console.error("Transaction fetch error:", error);
+        res.status(500).json({ message: "Internal server error" });
     }
 });
+
+app.get("/my-transactions", authenticateToken, async (req, res) => {
+    try {
+        console.log("Authenticated user:", req.user); // From JWT payload
+
+        const transactions = await displayMyTransactions(); // Only withdrawals, teller 1
+
+        res.status(200).json({ transactions });
+    } catch (error) {
+        console.error("MyTransaction fetch error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+
+
 
 
 
@@ -235,7 +312,7 @@ app.put("/delete-transaction/:id", async (req, res) => {
             return res.status(404).send("Transaction not found");
         }
         res.status(200).send({ DeleteStatus });
-   
+
     } catch (error) {
         console.error(error);
         res.status(500).send("Internal server error");
@@ -248,9 +325,9 @@ app.put("/delete-transaction/:id", async (req, res) => {
 
 
 
-app.post("/create-user", async (req, res)=>{
+app.post("/create-user", async (req, res) => {
     // const userRole = req.session.role;
-    const {Name, LastName, Username, Password, TellerNumber} = req.body
+    const { Name, LastName, Username, Password, TellerNumber } = req.body
 
     if (!Name || !LastName || !Username || !Password || !TellerNumber) {
         return res.status(400).send("Missing required fields");
@@ -260,10 +337,10 @@ app.post("/create-user", async (req, res)=>{
     //     return res.status(401).json({ message: 'User not admin error creating ' });
     // }
 
-    try{
-    const users = await createUser(Name, LastName, Username, Password, TellerNumber)
-    res.status(201).send({users});
-    }catch (error){
+    try {
+        const users = await createUser(Name, LastName, Username, Password, TellerNumber)
+        res.status(201).send({ users });
+    } catch (error) {
         console.error(error);
         res.status(500).send("internal server error")
 
@@ -277,7 +354,7 @@ app.put("/update-user/:id", async (req, res) => {
 
     const { id } = req.params;
 
-    const {Name, LastName, Username, Password} = req.body;
+    const { Name, LastName, Username, Password } = req.body;
 
     if (!LastName || !Name || !Username || !Password) {
         return res.status(400).send("Missing required fields");
@@ -288,7 +365,7 @@ app.put("/update-user/:id", async (req, res) => {
     // }
 
     try {
-        const updatedTransaction = await updateUser(id,{Name, LastName, Username, Password});
+        const updatedTransaction = await updateUser(id, { Name, LastName, Username, Password });
         if (!updatedTransaction) {
             return res.status(404).send("Transaction not found");
         }
@@ -299,17 +376,36 @@ app.put("/update-user/:id", async (req, res) => {
     }
 });
 
+//generate app . get function for logout delete token session and jwt session
+app.post("/logout", async (req, res) => {
+    try {
+        // Clear the session
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Error destroying session:', err);
+                return res.status(500).json({ message: 'Error during logout' });
+            }
+            res.status(200).json({ message: 'Logout successful' });
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
 
 //get user ip route
 app.get("/get-user-ip", (req, res) => {
     const userIP = getUserIP(req);
     res.json({ ip: userIP });
-  });
+});
 
 app.get("/lockIp", (req, res) => {
     const message = lockIP(req); // Pass `req` to `lockIP`
     res.json({ message });
-  });
+});
 
 
 
@@ -338,13 +434,108 @@ app.use((err, req, res, next) => {
     console.error(err.stack)
     res.status(500).send('Something broke!')
 
-  })
+})
 
 
-  const ip = '192.168.10.245';
-  const port = '8080';
-  app.listen(port, ip, () => {
+const ip = '192.168.10.245';
+const port = '8080';
+app.listen(port, ip, () => {
     console.log('running on 8080')
-  })
+})
+
+app.put("/update-transaction-status/:id", authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const { Status } = req.body;
+
+    // Validate status
+    const validStatuses = ['In Progress', 'Open', 'Closed'];
+    if (!validStatuses.includes(Status)) {
+        return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    try {
+        const updatedTransaction = await updateTransactionStatus(id, Status);
+        if (!updatedTransaction) {
+            return res.status(404).json({ message: 'Transaction not found' });
+        }
+        res.status(200).json({
+            message: 'Status updated successfully',
+            transaction: updatedTransaction
+        });
+    } catch (error) {
+        console.error('Error updating transaction status:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+app.get("/teller-one-transactions", authenticateToken, async (req, res) => {
+    try {
+        const transactions = await displayTellerOneTransactions();
+        res.json({ transactions });
+    } catch (error) {
+        console.error("Error fetching Teller 1 transactions:", error);
+        res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+});
+
+app.get("/teller-two-transactions", authenticateToken, async (req, res) => {
+    try {
+        const transactions = await displayTellerTwoTransactions();
+        res.json({ transactions });
+    } catch (error) {
+        console.error("Error fetching Teller 2 transactions:", error);
+        res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+});
+
+app.get("/teller-three-transactions", authenticateToken, async (req, res) => {
+    try {
+        const transactions = await displayTellerThreeTransactions();
+        res.json({ transactions });
+    } catch (error) {
+        console.error("Error fetching Teller 3 transactions:", error);
+        res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+});
+
+app.get("/teller-four-transactions", authenticateToken, async (req, res) => {
+    try {
+        const transactions = await displayTellerFourTransactions();
+        res.json({ transactions });
+    } catch (error) {
+        console.error("Error fetching Teller 4 transactions:", error);
+        res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+});
+
+app.post("/create-withdrawal", authenticateToken, async (req, res) => {
+    const { AccountNumber, Name, Amount, AccountType } = req.body;
+
+    if (!AccountNumber || !Name || !Amount || !AccountType) {
+        return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    try {
+        // Get teller number from the authenticated user (set by middleware)
+        const tellerNumber = req.user.tellerNumber;
+
+        if (!tellerNumber) {
+            return res.status(401).json({ message: "Unauthorized: Teller number not found" });
+        }
+
+        if (isNaN(AccountNumber) || !Number.isInteger(Number(AccountNumber)) || Number(AccountNumber) <= 0) {
+            return res.status(400).json({ message: "Amount must be in digits" });
+        }
+
+        const transaction = await createWithdrawalTransaction(AccountNumber, Name, Amount, AccountType);
+        res.status(201).json({ transaction });
+    } catch (error) {
+        console.error("Error creating withdrawal:", error);
+        res.status(500).json({ message: "Internal server error" });
+
+
+    }
+});
+
 
 
