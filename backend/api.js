@@ -77,7 +77,7 @@ app.post("/login", async (req, res) => {
     try {
         var tellerNumber = 0;
         const realIP = getUserIP(req);
-        if (realIP == "192.168.10.245" || realIP == "192.168.10.237" || realIP == "192.168.10.115") {
+        if (realIP == "192.168.10.245" || realIP == "192.168.10.237" || realIP == "192.168.10.115" || realIp == "192.168.10.74") {
             tellerNumber = "1"
         }
         else if (realIP == "192.168.10.153") {
@@ -105,7 +105,7 @@ app.post("/login", async (req, res) => {
 
 
 
-        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "5h" });
 
         const validResult = await verifiyToken(token)
         console.log("hello", validResult);
@@ -177,7 +177,7 @@ app.post("/create-transaction", authenticateToken, async (req, res) => {
             }
             break;
     }
-    
+
     try {
         // Get teller number from the authenticated user (set by middleware)
         const tellerNumber = req.user.tellerNumber;
@@ -230,7 +230,7 @@ app.put("/update-transaction/:id", async (req, res) => {
         res.status(500).send("Internal server error");
     }
 
-    
+
 });
 
 // app.get("/display-transactions", authenticateToken,async (req, res) => {

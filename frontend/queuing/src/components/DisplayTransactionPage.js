@@ -75,7 +75,7 @@ const DisplayTransactionPage = () => {
                 <th>Account Number</th>
                 <th>Transaction Type</th>
                 <th>Date</th>
-                <th>Teller Number</th>
+                {/* <th>Teller Number</th> */}
                 <th>Amount</th>
                 <th>Status</th>
               </tr>
@@ -90,7 +90,7 @@ const DisplayTransactionPage = () => {
                   <td>{txn.AccountNumber || 'N/A'}</td>
                   <td>{txn.TransactionType || 'N/A'}</td>
                   <td>{txn.created ? new Date(txn.created).toLocaleString() : 'N/A'}</td>
-                  <td>{txn.TellerNumber || 'N/A'}</td>
+                  {/* <td>{txn.TellerNumber || 'N/A'}</td> */}
                   <td>{txn.Amount || 'N/A'}</td>
                   <td>{formatStatus(txn.Status)}</td>
                 </tr>

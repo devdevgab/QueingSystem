@@ -17,7 +17,6 @@ const MyTransactionPage = () => {
       const token = localStorage.getItem('token');
       let endpoint = '';
 
-      // Determine which endpoint to use based on teller number
       switch (tellerNumber) {
         case "1":
           endpoint = '/teller-one-transactions';
@@ -46,15 +45,11 @@ const MyTransactionPage = () => {
       }
 
       const data = await res.json();
-
-      // Check if there are new transactions
       const hasNewTransactions = JSON.stringify(data.transactions) !== JSON.stringify(transactions);
 
       if (hasNewTransactions) {
         setTransactions(data.transactions || []);
         setLastUpdateTime(new Date());
-
-        // Show toast only if there are new transactions
         if (transactions.length > 0) {
           showToast('New transactions available', 'info');
         }
@@ -68,7 +63,6 @@ const MyTransactionPage = () => {
   }, [tellerNumber, transactions]);
 
   useEffect(() => {
-    // Get teller number from token on component mount
     const token = localStorage.getItem('token');
     if (token) {
       try {
@@ -84,11 +78,7 @@ const MyTransactionPage = () => {
   useEffect(() => {
     if (tellerNumber) {
       fetchTransactions();
-
-      // Set up polling interval
       const intervalId = setInterval(fetchTransactions, POLLING_INTERVAL);
-
-      // Cleanup interval on component unmount
       return () => clearInterval(intervalId);
     }
   }, [tellerNumber, fetchTransactions]);
@@ -102,7 +92,6 @@ const MyTransactionPage = () => {
   };
 
   const handleOverlayClick = (e) => {
-    // Only close if clicking the overlay itself, not its children
     if (e.target === e.currentTarget) {
       handleCloseModal();
     }
@@ -162,20 +151,20 @@ const MyTransactionPage = () => {
       case 'In Progress':
         return {
           ...baseStyle,
-          backgroundColor: isSelected ? '#4299e1' : '#ebf8ff',
-          color: isSelected ? 'white' : '#2b6cb0'
+          backgroundColor: isSelected ? '#38a169' : '#f0fff4',
+          color: isSelected ? 'white' : '#2f855a'
         };
       case 'Open':
         return {
           ...baseStyle,
-          backgroundColor: isSelected ? '#48bb78' : '#f0fff4',
-          color: isSelected ? 'white' : '#2f855a'
+          backgroundColor: isSelected ? '#f6c000' : '#fffbea',
+          color: isSelected ? '#1a1a1a' : '#744210'
         };
       case 'Closed':
         return {
           ...baseStyle,
-          backgroundColor: isSelected ? '#f56565' : '#fff5f5',
-          color: isSelected ? 'white' : '#c53030'
+          backgroundColor: isSelected ? '#e53e3e' : '#fff5f5',
+          color: isSelected ? 'white' : '#822727'
         };
       default:
         return baseStyle;
@@ -211,9 +200,11 @@ const MyTransactionPage = () => {
         <p><strong>Date:</strong> {new Date(selectedTransaction.created).toLocaleString()}</p>
         <p><strong>Teller Number:</strong> {selectedTransaction.TellerNumber || 'N/A'}</p>
         <p><strong>Amount:</strong> {selectedTransaction.Amount}</p>
-        <p><strong>Current Status:</strong> <span className={`status-${selectedTransaction.Status?.toLowerCase() || 'in-progress'}`}>
-          {selectedTransaction.Status || 'In Progress'}
-        </span></p>
+        <p><strong>Current Status:</strong>{' '}
+          <span className={`status-badge ${selectedTransaction.Status?.toLowerCase().replace(/\s/g, '-') || 'in-progress'}`}>
+            {selectedTransaction.Status || 'In Progress'}
+          </span>
+        </p>
       </div>
     );
   };
@@ -259,7 +250,9 @@ const MyTransactionPage = () => {
                   <td>{txn.Name}</td>
                   <td>{txn.TransactionType}</td>
                   <td>
-                    {txn.Status || 'In Progress'}
+                    <span className={`status-badge ${txn.Status?.toLowerCase().replace(/\s/g, '-') || 'in-progress'}`}>
+                      {txn.Status || 'In Progress'}
+                    </span>
                   </td>
                 </tr>
               ))}
