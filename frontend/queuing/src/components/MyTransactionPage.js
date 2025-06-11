@@ -11,6 +11,25 @@ const MyTransactionPage = () => {
   const [tellerNumber, setTellerNumber] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    // Convert SQL Server datetime to ISO format
+    const date = new Date(dateString.replace(' ', 'T') + 'Z');
+    if (isNaN(date.getTime())) return 'Invalid Date';
+
+    return date.toLocaleString('en-PH', {
+      timeZone: 'Asia/Manila',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+  };
 
   const fetchTransactions = useCallback(async () => {
     try {
@@ -197,14 +216,26 @@ const MyTransactionPage = () => {
         <p><strong>Account Type:</strong> {selectedTransaction.AccountType || 'N/A'}</p>
         <p><strong>Transaction Type:</strong> {selectedTransaction.TransactionType}</p>
         <p><strong>Deposit Type:</strong> {selectedTransaction.DepositType || 'N/A'}</p>
-        <p><strong>Date:</strong> {new Date(selectedTransaction.created).toLocaleString()}</p>
-        <p><strong>Teller Number:</strong> {selectedTransaction.TellerNumber || 'N/A'}</p>
+        <p><strong>Date:</strong> {selectedTransaction.created ? (() => {
+          const date = new Date(selectedTransaction.created);
+          return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+            timeZone: 'UTC'
+          });
+        })() : 'N/A'}</p>
+        {/* <p><strong>Status:</strong> {selectedTransaction.Status || 'Open'}</p> */}
         <p><strong>Amount:</strong> {selectedTransaction.Amount}</p>
-        <p><strong>Current Status:</strong>{' '}
+        {/* <p><strong>Current Status:</strong>{' '}
           <span className={`status-badge ${selectedTransaction.Status?.toLowerCase().replace(/\s/g, '-') || 'in-progress'}`}>
             {selectedTransaction.Status || 'In Progress'}
           </span>
-        </p>
+        </p> */}
       </div>
     );
   };
@@ -220,7 +251,13 @@ const MyTransactionPage = () => {
         <h2>{getTellerTitle()}</h2>
         {lastUpdateTime && (
           <span className="last-update">
-            Last updated: {lastUpdateTime.toLocaleTimeString()}
+            Last updated: {lastUpdateTime.toLocaleTimeString('en-PH', {
+              timeZone: 'Asia/Manila',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: true
+            })}
           </span>
         )}
       </div>
@@ -236,6 +273,7 @@ const MyTransactionPage = () => {
                 <th>Transaction ID</th>
                 <th>Name</th>
                 <th>Transaction Type</th>
+                <th>Date</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -249,9 +287,10 @@ const MyTransactionPage = () => {
                   <td>{txn.ID}</td>
                   <td>{txn.Name}</td>
                   <td>{txn.TransactionType}</td>
+                  <td>{formatDate(txn.created)}</td>
                   <td>
-                    <span className={`status-badge ${txn.Status?.toLowerCase().replace(/\s/g, '-') || 'in-progress'}`}>
-                      {txn.Status || 'In Progress'}
+                    <span className={`status-badge ${txn.Status?.toLowerCase().replace(/\s/g, '-') || 'open'}`}>
+                      {txn.Status || 'Open'}
                     </span>
                   </td>
                 </tr>
@@ -285,7 +324,7 @@ const MyTransactionPage = () => {
                       onClick={() => handleStatusUpdate(selectedTransaction.ID, 'Closed')}
                       style={getStatusButtonStyle('Closed')}
                     >
-                      Closed
+                      Close
                     </button>
                   </div>
                 </div>

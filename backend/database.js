@@ -117,15 +117,13 @@ export async function displayTransactions() {
     try {
         const result = await pool.request()
             .query(
-                `SELECT * FROM tbl_Transactions`
-
+                `SELECT * FROM tbl_Transactions ORDER BY created DESC`
             );
         return result.recordset
     }
     catch (error) {
         throw error;
     }
-
 }
 
 export async function displayMyTransactions() {

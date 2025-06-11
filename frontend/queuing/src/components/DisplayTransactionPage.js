@@ -6,6 +6,24 @@ const DisplayTransactionPage = () => {
   const [loading, setLoading] = useState(true);
   const { isDarkMode } = useTheme();
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    // Convert SQL Server datetime to ISO format
+    const date = new Date(dateString.replace(' ', 'T') + 'Z');
+    if (isNaN(date.getTime())) return 'Invalid Date';
+
+    return date.toLocaleString('en-PH', {
+      timeZone: 'Asia/Manila',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+  };
+
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
@@ -89,10 +107,24 @@ const DisplayTransactionPage = () => {
                   <td>{txn.ID || 'N/A'}</td>
                   <td>{txn.AccountNumber || 'N/A'}</td>
                   <td>{txn.TransactionType || 'N/A'}</td>
-                  <td>{txn.created ? new Date(txn.created).toLocaleString() : 'N/A'}</td>
+                  <td>{txn.created ? (() => {
+                    const date = new Date(txn.created);
+                    return date.toLocaleString('en-US', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: true,
+                      timeZone: 'UTC'
+                    });
+                  })() : 'N/A'}</td>
+
                   {/* <td>{txn.TellerNumber || 'N/A'}</td> */}
                   <td>{txn.Amount || 'N/A'}</td>
-                  <td>{formatStatus(txn.Status)}</td>
+                  {/* <td>{formatStatus(txn.Status) || 'Open'}</td> */}
+                  <td>{formatStatus(txn.Status) === 'Unknown' ? 'Open' : formatStatus(txn.Status)}</td>
                 </tr>
               ))}
             </tbody>

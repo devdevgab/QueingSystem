@@ -1,11 +1,12 @@
 // src/components/NavigationBar.js
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 
 const NavigationBar = () => {
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem('token');
 
   const getUserRole = () => {
@@ -27,22 +28,18 @@ const NavigationBar = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        credentials: 'include' // Include cookies in the request
+        credentials: 'include'
       });
 
       if (response.ok) {
-        // Clear local storage
         localStorage.removeItem('token');
-        // Redirect to login page
         navigate('/login');
       } else {
-        // Even if the server request fails, we'll still log the user out locally
         localStorage.removeItem('token');
         navigate('/login');
         console.error('Server logout failed, but local logout completed');
       }
     } catch (error) {
-      // Even if there's an error, we'll still log the user out locally
       localStorage.removeItem('token');
       navigate('/login');
       console.error('Error during logout:', error);
@@ -51,26 +48,70 @@ const NavigationBar = () => {
 
   const userRole = getUserRole();
 
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
+  const getLinkStyle = (path) => ({
+    color: 'var(--nav-text)',
+    textDecoration: 'none',
+    padding: '0.75rem 1.25rem',
+    borderRadius: '8px',
+    transition: 'all 0.3s ease',
+    backgroundColor: isActive(path) ? 'var(--nav-active)' : 'transparent',
+    color: isActive(path) ? 'white' : 'var(--nav-text)',
+    fontWeight: isActive(path) ? '600' : '500',
+    fontSize: '0.95rem',
+    letterSpacing: '0.3px',
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    '&:hover': {
+      backgroundColor: isActive(path) ? 'var(--nav-active)' : 'var(--nav-hover)',
+      transform: 'translateY(-1px)'
+    }
+  });
+
   return (
     <nav style={{
       backgroundColor: 'var(--nav-bg)',
       color: 'var(--nav-text)',
-      padding: '1rem',
-      boxShadow: '0 2px 4px var(--shadow-color)'
+      padding: '1rem 2rem',
+      boxShadow: '0 2px 8px var(--shadow-color)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 1000,
+      backdropFilter: 'blur(8px)',
+      borderBottom: '1px solid var(--border-color)'
     }}>
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        maxWidth: '1200px',
-        margin: '0 auto'
+        maxWidth: '1400px',
+        margin: '0 auto',
+        padding: '0 1rem'
       }}>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <Link to="/" style={{ color: 'var(--nav-text)', textDecoration: 'none' }}>Home</Link>
+        <div style={{
+          display: 'flex',
+          gap: '1.5rem',
+          alignItems: 'center'
+        }}>
+          <Link to="/" style={getLinkStyle('/')}>
+            <span style={{ fontSize: '1.2rem', fontWeight: '600' }}>🏦</span>
+            Home
+          </Link>
           {token && userRole !== 'computer_operator' && (
             <>
-              <Link to="/mytransactions" style={{ color: 'var(--nav-text)', textDecoration: 'none' }}>My Transactions</Link>
-              <Link to="/transactions" style={{ color: 'var(--nav-text)', textDecoration: 'none' }}>All Transactions</Link>
+              <Link to="/mytransactions" style={getLinkStyle('/mytransactions')}>
+                <span style={{ fontSize: '1.2rem' }}>📋</span>
+                My Transactions
+              </Link>
+              <Link to="/transactions" style={getLinkStyle('/transactions')}>
+                <span style={{ fontSize: '1.2rem' }}>📊</span>
+                All Transactions
+              </Link>
             </>
           )}
         </div>
@@ -81,20 +122,38 @@ const NavigationBar = () => {
               onClick={handleLogout}
               style={{
                 backgroundColor: 'transparent',
-                border: 'none',
+                border: '1px solid var(--border-color)',
                 color: 'var(--nav-text)',
                 cursor: 'pointer',
-                padding: '0.5rem 1rem',
-                borderRadius: '4px',
-                transition: 'background-color 0.3s ease'
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                '&:hover': {
+                  backgroundColor: 'var(--nav-hover)',
+                  transform: 'translateY(-1px)'
+                }
               }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--hover-bg)'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--nav-hover)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
             >
+              <span style={{ fontSize: '1.2rem' }}>🚪</span>
               Logout
             </button>
           ) : (
-            <Link to="/login" style={{ color: 'var(--nav-text)', textDecoration: 'none' }}>Login</Link>
+            <Link to="/login" style={getLinkStyle('/login')}>
+              <span style={{ fontSize: '1.2rem' }}>🔑</span>
+              Login
+            </Link>
           )}
         </div>
       </div>

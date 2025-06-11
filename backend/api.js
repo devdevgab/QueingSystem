@@ -151,6 +151,12 @@ app.post("/create-transaction", authenticateToken, async (req, res) => {
         return res.status(400).send("Missing required fields");
     }
 
+    if (isNaN(Name) || !Number.isInteger(Number(Name))) {
+        const isNumber = confirm("The name appears to be a number. Do you want to proceed?");
+        if (!isNumber) {
+            return res.status(400).json({ message: "Transaction cancelled" });
+        }
+    }
     // Validate Amount is a valid number
     if (isNaN(Amount) || !Number.isInteger(Number(Amount)) || Number(Amount) <= 0) {
         return res.status(400).send("Amount must be a positive integer");
@@ -515,6 +521,12 @@ app.post("/create-withdrawal", authenticateToken, async (req, res) => {
         return res.status(400).json({ message: "Missing required fields" });
     }
 
+    if (isNaN(Name) || !Number.isInteger(Number(Name))) {
+        const isNumber = confirm("The name appears to be a number. Do you want to proceed?");
+        if (!isNumber) {
+            return res.status(400).json({ message: "Transaction cancelled" });
+        }
+    }
     try {
         // Get teller number from the authenticated user (set by middleware)
         const tellerNumber = req.user.tellerNumber;
@@ -524,7 +536,7 @@ app.post("/create-withdrawal", authenticateToken, async (req, res) => {
         }
 
         if (isNaN(AccountNumber) || !Number.isInteger(Number(AccountNumber)) || Number(AccountNumber) <= 0) {
-            return res.status(400).json({ message: "Amount must be in digits" });
+            return res.status(400).json({ message: "Account Number must be in digits" });
         }
 
         const transaction = await createWithdrawalTransaction(AccountNumber, Name, Amount, AccountType);

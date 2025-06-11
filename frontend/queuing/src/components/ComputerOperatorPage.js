@@ -41,6 +41,15 @@ const ComputerOperatorPage = () => {
                 throw new Error('No authentication token found');
             }
 
+            // Check if name appears to be a number
+            if (!isNaN(formData.Name) && Number.isInteger(Number(formData.Name))) {
+                const isNumber = window.confirm("The name appears to be a number. Do you want to proceed?");
+                if (!isNumber) {
+                    showToast("Transaction cancelled", "error");
+                    return;
+                }
+            }
+
             const transactionData = {
                 AccountNumber: formData.AccountNumber,
                 Name: formData.Name,
