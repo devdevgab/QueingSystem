@@ -5,21 +5,10 @@ import session from 'express-session';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { createTransaction, updateTransaction, displayTransactions, displayTellerOneTransactions, deleteTransaction, displayMyTransactions, verifiyToken, createUser, updateUser, getUserIP, lockIP, validateUser, updateTransactionStatus, displayTellerTwoTransactions, displayTellerThreeTransactions, displayTellerFourTransactions, createWithdrawalTransaction } from './database.js';
-import { authenticateToken } from './middleware/authMiddleware.js'; // adjust path if needed
+import { authenticateToken } from './middleware/authMiddleware.js';
 
+const app = express();
 
-//WHOEVER TAKES OVER THIS CODE PLEASE MAKE SURE TO CHANGE THE IP ADDRESS TO THE SERVER IP ADDRESS THIS CAN BE DONE ON THE LEFT
-//SIDE OF VS CODE, BY CLICK THE SEARCH BUTTON AND CHOOSING REPLACE
-
-//BEFORE PROCEEDING TO EDIT THE CODE BELOW PLEASE READ THE DOCUMENTATION ON THE BACKEND FOLDER, I PLACED A README FILE THERE
-
-
-//I DONT KNOW HOW I WROTE THIS CODE BUT IT WORKS JUST FOLLOW THE PROPER BACKEND API CALLS AND YOU SHOULD BE FINE
-
-// const express = require('express');
-const app = express()
-
-// app.use(cors());
 app.use(bodyParser.json({
     limit: '50mb',
     extended: true,
@@ -33,43 +22,25 @@ app.use(bodyParser.urlencoded({
 
 dotenv.config();
 
-
-
-
 const corsOptions = {
-    origin: "http://192.168.10.245:3000", // Allow your frontend origin
+    origin: "http://192.168.10.245:3000",
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // Critical: Allows cookies to be sent
+    credentials: true,
 };
 app.use(cors(corsOptions));
-
-
-app.use(bodyParser.json());
 
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
-        secure: false, // ✅ Change to true if using HTTPS
-        httpOnly: false, // ✅ Try setting to false for debugging
-        sameSite: "lax", // ✅ Change to "none" if frontend is on a different origin
-        maxAge: 60 * 60 * 1000 // 1 hour
+        secure: false,
+        httpOnly: false,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 1000
     }
 }));
-
-
-
-// try {
-//     const decoded = jwt.verify(token, secretKey);
-//     console.log("JWT is valid:", decoded);
-// } catch (err) {
-//     console.log("JWT is invalid:", err.message);
-// }
-
-
-
 
 app.post("/login", async (req, res) => {
     const { Username, Password } = req.body;
@@ -77,7 +48,7 @@ app.post("/login", async (req, res) => {
     try {
         var tellerNumber = 0;
         const realIP = getUserIP(req);
-        if (realIP == "192.168.10.245" || realIP == "192.168.10.237" || realIP == "192.168.10.115" || realIp == "192.168.10.74") {
+        if (realIP == "192.168.10.245" || realIP == "192.168.10.237" || realIP == "192.168.10.157") {
             tellerNumber = "1"
         }
         else if (realIP == "192.168.10.153") {
@@ -151,16 +122,25 @@ app.post("/create-transaction", authenticateToken, async (req, res) => {
         return res.status(400).send("Missing required fields");
     }
 
-    if (isNaN(Name) || !Number.isInteger(Number(Name))) {
-        const isNumber = confirm("The name appears to be a number. Do you want to proceed?");
-        if (!isNumber) {
-            return res.status(400).json({ message: "Transaction cancelled" });
-        }
+    // Validate that Name is not a number
+    if (!isNaN(Name) && Number.isInteger(Number(Name))) {
+        return res.status(400).json({ message: "Name cannot be a number" });
     }
+
     // Validate Amount is a valid number
-    if (isNaN(Amount) || !Number.isInteger(Number(Amount)) || Number(Amount) <= 0) {
-        return res.status(400).send("Amount must be a positive integer");
+    if (isNaN(Amount) || !Number.isInteger(Number(Amount))) {
+        return res.status(400).send("Amount must be a valid integer");
     }
+
+    // Check SQL Server INT range
+    const amountNum = Number(Amount);
+    if (amountNum <= 0) {
+        return res.status(400).json({ message: "Amount must be greater than 0" });
+    }
+    if (amountNum > 2147483647) {
+        return res.status(400).json({ message: "Amount is too high. Must be less than or equal to 2,147,483,647" });
+    }
+
     if (isNaN(AccountNumber) || !Number.isInteger(Number(AccountNumber)) || Number(AccountNumber) <= 0) {
         return res.status(400).send("Account Number must be a positive integer");
     }
@@ -443,11 +423,10 @@ app.use((err, req, res, next) => {
 })
 
 
-const ip = '192.168.10.245';
-const port = '8080';
-app.listen(port, ip, () => {
-    console.log('running on 8080')
-})
+const port = process.env.PORT || 8080;
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
 
 app.put("/update-transaction-status/:id", authenticateToken, async (req, res) => {
     const { id } = req.params;
@@ -521,12 +500,11 @@ app.post("/create-withdrawal", authenticateToken, async (req, res) => {
         return res.status(400).json({ message: "Missing required fields" });
     }
 
-    if (isNaN(Name) || !Number.isInteger(Number(Name))) {
-        const isNumber = confirm("The name appears to be a number. Do you want to proceed?");
-        if (!isNumber) {
-            return res.status(400).json({ message: "Transaction cancelled" });
-        }
+    // Validate that Name is not a number
+    if (!isNaN(Name) && Number.isInteger(Number(Name))) {
+        return res.status(400).json({ message: "Name cannot be a number" });
     }
+
     try {
         // Get teller number from the authenticated user (set by middleware)
         const tellerNumber = req.user.tellerNumber;
@@ -544,8 +522,6 @@ app.post("/create-withdrawal", authenticateToken, async (req, res) => {
     } catch (error) {
         console.error("Error creating withdrawal:", error);
         res.status(500).json({ message: "Internal server error" });
-
-
     }
 });
 

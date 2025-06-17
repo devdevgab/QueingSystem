@@ -270,7 +270,9 @@ export async function updateUser(ID, { Name, LastName, Username, Password }) {
 
 export const getUserIP = (req) => {
     const forwarded = req.headers["x-forwarded-for"];
-    return forwarded ? forwarded.split(",")[0] : req.socket.remoteAddress;
+    const ip = forwarded ? forwarded.split(",")[0] : req.socket.remoteAddress;
+    // Remove IPv6 prefix if present
+    return ip.replace(/^::ffff:/, '');
 };
 
 // Function to check if the user is Teller One

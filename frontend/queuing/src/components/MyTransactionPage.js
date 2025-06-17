@@ -6,29 +6,36 @@ const POLLING_INTERVAL = 5000; // 5 seconds
 
 const MyTransactionPage = () => {
   const [transactions, setTransactions] = useState([]);
+  const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [tellerNumber, setTellerNumber] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('All');
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    // Convert SQL Server datetime to ISO format
-    const date = new Date(dateString.replace(' ', 'T') + 'Z');
-    if (isNaN(date.getTime())) return 'Invalid Date';
+    try {
+      // Parse the date string directly
+      const date = new Date(dateString);
 
-    return date.toLocaleString('en-PH', {
-      timeZone: 'Asia/Manila',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true
-    });
+      // Format the date
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+        timeZone: 'UTC'
+      });
+    } catch (error) {
+      console.error('Date parsing error:', error);
+      return 'Invalid Date';
+    }
   };
 
   const fetchTransactions = useCallback(async () => {
@@ -101,6 +108,14 @@ const MyTransactionPage = () => {
       return () => clearInterval(intervalId);
     }
   }, [tellerNumber, fetchTransactions]);
+
+  useEffect(() => {
+    if (statusFilter === 'All') {
+      setFilteredTransactions(transactions);
+    } else {
+      setFilteredTransactions(transactions.filter(t => t.Status === statusFilter));
+    }
+  }, [statusFilter, transactions]);
 
   const handleRowClick = (transaction) => {
     setSelectedTransaction(transaction);
@@ -240,6 +255,10 @@ const MyTransactionPage = () => {
     );
   };
 
+  const handleFilterChange = (status) => {
+    setStatusFilter(status);
+  };
+
   return (
     <div className="container">
       {toast.show && (
@@ -261,6 +280,32 @@ const MyTransactionPage = () => {
           </span>
         )}
       </div>
+      <div className="filter-buttons">
+        <button
+          className={`filter-button ${statusFilter === 'All' ? 'active' : ''}`}
+          onClick={() => handleFilterChange('All')}
+        >
+          All
+        </button>
+        <button
+          className={`filter-button ${statusFilter === 'Open' ? 'active' : ''}`}
+          onClick={() => handleFilterChange('Open')}
+        >
+          Open
+        </button>
+        <button
+          className={`filter-button ${statusFilter === 'In Progress' ? 'active' : ''}`}
+          onClick={() => handleFilterChange('In Progress')}
+        >
+          In Progress
+        </button>
+        <button
+          className={`filter-button ${statusFilter === 'Closed' ? 'active' : ''}`}
+          onClick={() => handleFilterChange('Closed')}
+        >
+          Closed
+        </button>
+      </div>
       {loading ? (
         <p>Loading transactions...</p>
       ) : transactions.length === 0 ? (
@@ -278,7 +323,7 @@ const MyTransactionPage = () => {
               </tr>
             </thead>
             <tbody>
-              {transactions.map((txn, index) => (
+              {filteredTransactions.map((txn, index) => (
                 <tr
                   key={index}
                   onClick={() => handleRowClick(txn)}
@@ -309,19 +354,28 @@ const MyTransactionPage = () => {
                   {renderTransactionDetails()}
                   <div className="modal-buttons">
                     <button
-                      onClick={() => handleStatusUpdate(selectedTransaction.ID, 'In Progress')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusUpdate(selectedTransaction.ID, 'In Progress');
+                      }}
                       style={getStatusButtonStyle('In Progress')}
                     >
                       In Progress
                     </button>
                     <button
-                      onClick={() => handleStatusUpdate(selectedTransaction.ID, 'Open')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusUpdate(selectedTransaction.ID, 'Open');
+                      }}
                       style={getStatusButtonStyle('Open')}
                     >
                       Open
                     </button>
                     <button
-                      onClick={() => handleStatusUpdate(selectedTransaction.ID, 'Closed')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusUpdate(selectedTransaction.ID, 'Closed');
+                      }}
                       style={getStatusButtonStyle('Closed')}
                     >
                       Close
