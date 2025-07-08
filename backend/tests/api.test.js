@@ -304,7 +304,8 @@ describe('POST /create-transaction', () => {
                 Amount: "5000",
                 AccountType: "Savings",
                 DepositType: "Cash"
-            });
+            });z
+            
 
         expect(response.status).toBe(201);
         expect(response.body).toHaveProperty('transaction');
@@ -318,10 +319,11 @@ describe('POST /create-transaction', () => {
                 Name: "Gabriel", // Missing AccountNumber, TransactionType, etc.
             });
 
+
         expect(response.status).toBe(400);
         expect(response.text).toBe("Missing required fields");
     });
-
+    
     test('should fail if Amount is not a valid number', async () => {
         const response = await request(server)
             .post('/create-transaction')

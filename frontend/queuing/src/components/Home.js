@@ -42,11 +42,18 @@ const Home = () => {
             </Link>
           </>
         ) : (
-          <Link to="/computer-operator" className="home-card">
-            <img src={transactionsIcon} alt="Computer Operator" className="home-card-icon" />
-            <h2>Computer Operator</h2>
-            <p>Create and manage transactions</p>
-          </Link>
+          <>
+            <Link to="/computer-operator" className="home-card">
+              <img src={transactionsIcon} alt="Computer Operator" className="home-card-icon" />
+              <h2>Computer Operator</h2>
+              <p>Create and manage transactions</p>
+            </Link>
+            <Link to="/create-account" className="home-card">
+              <img src={myTransactionsIcon} alt="Create User" className="home-card-icon" />
+              <h2>Create User</h2>
+              <p>Create a new user account</p>
+            </Link>
+          </>
         )}
       </div>
     </div>

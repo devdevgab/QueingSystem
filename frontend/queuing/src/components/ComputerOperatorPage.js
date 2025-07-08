@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../css/ComputerOperatorPageStyles.css';
 
 const API_URL = 'http://192.168.10.245:8080';
@@ -16,6 +17,7 @@ const ComputerOperatorPage = () => {
         PaymentType: '',
         DisbursementType: ''
     });
+    const navigate = useNavigate();
 
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });

@@ -12,6 +12,7 @@
   "description": "",
   "type": "module",
   "dependencies": {
+    "@ngrok/ngrok": "^1.5.1",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -21,8 +22,8 @@
     "mssql": "^11.0.1"
   },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
     "jest": "^29.7.0",
-    "supertest": "^6.3.3",
-    "@jest/globals": "^29.7.0"
+    "supertest": "^6.3.3"
   }
 }

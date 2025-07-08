@@ -40,7 +40,20 @@ app.use(session({
         sameSite: "lax",
         maxAge: 60 * 60 * 1000
     }
+
+
+
 }));
+
+app.use((req, res, next) => {
+    // Check if the request is coming over HTTPS
+    if (req.headers['x-forwarded-proto'] === 'https' || req.secure) {
+        // Redirect to HTTP version
+        const httpUrl = `http://${req.headers.host}${req.url}`;
+        return res.redirect(httpUrl);
+    }
+    next();
+});
 
 app.post("/login", async (req, res) => {
     const { Username, Password } = req.body;
@@ -51,10 +64,10 @@ app.post("/login", async (req, res) => {
         if (realIP == "192.168.10.245" || realIP == "192.168.10.237" || realIP == "192.168.10.157") {
             tellerNumber = "1"
         }
-        else if (realIP == "192.168.10.153") {
+        else if (realIP == "192.168.10.24") {
             tellerNumber = "2"
         }
-        else if (realIP == "192.168.10.154") {
+        else if (realIP == "192.168.10.24") {
             tellerNumber = "3"
         }
         else if (realIP == "192.168.10.166") {
@@ -63,6 +76,7 @@ app.post("/login", async (req, res) => {
         else if (realIP == "192.168.10.245" || realIP == "192.168.10.115") {
             tellerNumber = "5" // Computer Operator
         }
+
 
         console.log(`User Login Attempt from IP: ${realIP}`);
 
@@ -331,6 +345,9 @@ app.post("/create-user", async (req, res) => {
         res.status(500).send("internal server error")
 
     }
+
+
+
 })
 
 
@@ -526,4 +543,51 @@ app.post("/create-withdrawal", authenticateToken, async (req, res) => {
 });
 
 
+app.post("/admin-login", async (req, res) => {
+    const { Username, Password } = req.body;
 
+    if (!Username || !Password) {
+        return res.status(400).json({ message: "Username and password are required" });
+    }
+
+    try {
+        // Validate user credentials and check TellerNumber
+        const user = await validateUser(Username, Password);
+
+        // Log the entire user object for debugging
+        console.log("Admin Login User Object:", user);
+
+        if (!user) {
+            return res.status(401).json({ message: "Invalid username or password" });
+        }
+
+        // Check if the user is an admin (TellerNumber == 100)
+        if (user.TellerNumber !== 100) {
+            return res.status(403).json({ message: "Access denied: Not an admin user" });
+        }
+
+        // Generate JWT token for admin
+        const payload = {
+            id: user.ID,
+            username: user.Username,
+            role: "admin",
+            tellerNumber: user.TellerNumber
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "5h" });
+
+        req.session.user = {
+            user,
+            token: token
+        };
+
+        res.status(200).json({
+            message: "Admin login successful",
+            token,
+            role: "admin"
+        });
+    } catch (error) {
+        console.error("Admin Login Error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});

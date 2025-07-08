@@ -1,0 +1,324 @@
+.create-account-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background-color: var(--bg-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.create-account-box {
+    background-color: var(--bg-secondary);
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px var(--shadow-color);
+    width: 100%;
+    max-width: 500px;
+    transform: translateY(20px);
+    animation: slideUp 0.5s ease forwards;
+    animation-delay: 0.2s;
+    margin: 0 auto;
+    border: 1px solid var(--border-color);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.create-account-box h2 {
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-size: 1.8rem;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+    animation-delay: 0.4s;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.create-account-box .form-row:nth-of-type(1) {
+    animation-delay: 0.5s;
+}
+
+.create-account-box .form-row:nth-of-type(2) {
+    animation-delay: 0.6s;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+}
+
+/* Individual form groups outside of form-row */
+.create-account-box .form-group:nth-of-type(3) {
+    animation-delay: 0.7s;
+}
+
+.create-account-box .form-group:nth-of-type(4) {
+    animation-delay: 0.8s;
+}
+
+.create-account-box .form-group:nth-of-type(5) {
+    animation-delay: 0.9s;
+}
+
+.create-account-box .form-group:nth-of-type(6) {
+    animation-delay: 1.0s;
+}
+
+/* Form groups inside form-row */
+.form-row .form-group {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--input-border);
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--button-primary);
+    box-shadow: 0 0 0 2px var(--button-primary-transparent);
+    transform: translateY(-1px);
+}
+
+.form-group input.error {
+    border-color: #e53e3e;
+    box-shadow: 0 0 0 2px rgba(229, 62, 62, 0.2);
+}
+
+.field-error {
+    color: #e53e3e;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: block;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
+}
+
+.error-message {
+    background-color: var(--error-bg);
+    color: var(--error-text);
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
+}
+
+.success-message {
+    background-color: #c6f6d5;
+    color: #22543d;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
+}
+
+[data-theme="dark"] .success-message {
+    background-color: #22543d;
+    color: #c6f6d5;
+}
+
+.create-account-button {
+    width: 100%;
+    background-color: var(--button-primary);
+    color: var(--button-text);
+    padding: 0.75rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+    animation-delay: 1.1s;
+    margin-top: 1rem;
+}
+
+.create-account-button:hover {
+    background-color: var(--button-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.create-account-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px var(--shadow-color);
+}
+
+.login-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+    animation-delay: 1.2s;
+}
+
+.login-link span {
+    color: var(--button-primary);
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+.login-link span:hover {
+    color: var(--button-hover);
+}
+
+/* Admin Login Styles */
+.admin-login-box {
+    max-width: 400px;
+}
+
+.admin-subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+    animation-delay: 0.3s;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-header h2 {
+    margin: 0;
+    animation-delay: 0.4s;
+}
+
+.logout-admin-btn {
+    background-color: var(--button-secondary);
+    color: var(--button-text);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.logout-admin-btn:hover {
+    background-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+/* Ensure form elements are properly visible and interactive */
+.create-account-box form {
+    position: relative;
+    z-index: 1;
+}
+
+.create-account-box .form-group {
+    position: relative;
+    z-index: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .create-account-container {
+        padding: 20px 15px;
+    }
+
+    .create-account-box {
+        padding: 2rem;
+        max-width: 100%;
+        margin: 0;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .create-account-box {
+        padding: 1.5rem;
+    }
+
+    .create-account-box h2 {
+        font-size: 1.5rem;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 0.6rem;
+        font-size: 0.9rem;
+    }
+}

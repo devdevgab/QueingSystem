@@ -346,3 +346,27 @@ export async function createWithdrawalTransaction(AccountNumber, Name, Amount, A
         throw error;
     }
 }
+
+
+export async function createAccount(AccountNumber, Name, LastName, Username, Password, TellerNumber) {
+    try {
+        const result = await pool.request()
+            .input('AccountNumber', sql.VarChar, AccountNumber)
+            .input('Name', sql.VarChar, Name)
+            .input('LastName', sql.VarChar, LastName)
+            .input('Username', sql.VarChar, Username)
+            .input('Password', sql.VarChar, Password)
+            .input('TellerNumber', sql.Int, TellerNumber)
+    } catch (error) {
+        throw error;
+    }
+}
+export async function loginAdminAccount(Username, Password) {
+    try {
+        const result = await pool.request()
+            .input('Username', sql.VarChar, Username)
+            .input('Password', sql.VarChar, Password)
+    } catch (error) {
+        throw error;
+    }
+}
