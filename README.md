@@ -132,11 +132,11 @@ npm run prod
 
 | Role | IP Addresses | Transaction Types | Capabilities |
 |------|-------------|------------------|--------------|
-| **Computer Operator** | 192.168.10.245, 192.168.10.115 | All transactions | Full system access, admin functions |
-| **Teller 1** | 192.168.10.245, 192.168.10.237, 192.168.10.157 | Withdrawals | Process withdrawal transactions |
-| **Teller 2** | 192.168.10.24 | Collection, Account Close, Voucher, Dismember, Loan Release | Specialized banking transactions |
-| **Teller 3** | 192.168.10.24 | Payment, Deposit | Payment and deposit transactions |
-| **Teller 4** | 192.168.10.166 | Voucher, ATM Cash Deposit, Deposit | Voucher and ATM-related transactions |
+| **Computer Operator** | 192.168.10.xx, 192.168.10.xx | All transactions | Full system access, admin functions |
+| **Teller 1** | 192.168.10.xx, 192.168.10.xx, 192.168.10.xx | Withdrawals | Process withdrawal transactions |
+| **Teller 2** | 192.168.10.xx | Collection, Account Close, Voucher, Dismember, Loan Release | Specialized banking transactions |
+| **Teller 3** | 192.168.10.xx | Payment, Deposit | Payment and deposit transactions |
+| **Teller 4** | 192.168.10.xx | Voucher, ATM Cash Deposit, Deposit | Voucher and ATM-related transactions |
 | **Admin** | Teller Number: 100 | All | Full system access, user management |
 
 ## 🔌 API Endpoints
@@ -174,23 +174,23 @@ The system automatically assigns teller numbers based on the client's IP address
 2. **Current IP Configuration**:
    ```javascript
    // Teller 1: Withdrawals
-   if (realIP == "192.168.10.245" || realIP == "192.168.10.237" || realIP == "192.168.10.157") {
+   if (realIP == "192.168.10.xx" || realIP == "192.168.10.xx" || realIP == "192.168.10.xx") {
        tellerNumber = "1"
    }
    // Teller 2: Collections, Account Close, Voucher, Dismember, Loan Release
-   else if (realIP == "192.168.10.24") {
+   else if (realIP == "192.168.10.xx") {
        tellerNumber = "2"
    }
    // Teller 3: Payment, Deposit
-   else if (realIP == "192.168.10.24") {
+   else if (realIP == "192.168.10.xx") {
        tellerNumber = "3"
    }
    // Teller 4: Voucher, ATM Cash Deposit, Deposit
-   else if (realIP == "192.168.10.166") {
+   else if (realIP == "192.168.10.xx") {
        tellerNumber = "4"
    }
    // Computer Operator (Teller 5): All transactions
-   else if (realIP == "192.168.10.245" || realIP == "192.168.10.115") {
+   else if (realIP == "192.168.10.xx" || realIP == "192.168.10.xx") {
        tellerNumber = "5"
    }
    ```
@@ -255,6 +255,15 @@ Or use online tools like [jwt.io](https://jwt.io/) for manual creation and decod
 - **Never share your secret key publicly or commit it to version control.**
 - **Always use a strong, random secret key.**
 - **Rotate your secret key periodically for enhanced security.**
+
+## 🚨 Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| **Database Connection Failed** | Verify SQL Server is running, check `.env` credentials |
+| **CORS Errors** | Update CORS origin in `backend/api.js` |
+| **Authentication Issues** | Clear localStorage, verify JWT_SECRET |
+| **Port Already in Use** | Change PORT in `.env` or kill existing processes |
 
 ## 🧪 Testing
 
