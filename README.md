@@ -207,6 +207,42 @@ const corsOptions = {
 | **Authentication Issues** | Clear localStorage, verify JWT_SECRET |
 | **Port Already in Use** | Change PORT in `.env` or kill existing processes |
 
+## 🔑 Security: Generating JWT Secret Key and Token
+
+### 1. Generating a Secure Secret Key
+Your JWT secret key should be a long, random string. You can generate one using Node.js:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+Or use an online password generator (at least 32 characters, with symbols).
+
+**Example:**
+```
+Vt9@5G!kWz#17Np$eR4xUbM&LcQ2^HaZ
+```
+Add this to your `.env` file as:
+```
+JWT_SECRET=your_generated_secret_key
+```
+
+### 2. Generating a JWT Token for Testing
+You can generate a JWT token using Node.js:
+
+```js
+const jwt = require('jsonwebtoken');
+const payload = { name: 'gabriel' }; // customize as needed
+const secretKey = 'your_generated_secret_key';
+const token = jwt.sign(payload, secretKey, { expiresIn: '5h' });
+console.log(token);
+```
+Or use online tools like [jwt.io](https://jwt.io/) for manual creation and decoding.
+
+### 3. Security Best Practices
+- **Never share your secret key publicly or commit it to version control.**
+- **Always use a strong, random secret key.**
+- **Rotate your secret key periodically for enhanced security.**
+
 ## 🧪 Testing
 
 ```bash
