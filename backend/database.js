@@ -275,6 +275,8 @@ export const getUserIP = (req) => {
     return ip.replace(/^::ffff:/, '');
 };
 
+
+
 // Function to check if the user is Teller One
 export const lockIP = (req) => {
     const deviceIP = getUserIP(req);

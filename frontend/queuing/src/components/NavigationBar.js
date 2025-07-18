@@ -98,7 +98,7 @@ const NavigationBar = () => {
           gap: '1.5rem',
           alignItems: 'center'
         }}>
-          <Link to="/" style={getLinkStyle('/')}>
+          <Link to="/home" style={getLinkStyle('/home')}>
             <span style={{ fontSize: '1.2rem', fontWeight: '600' }}>🏦</span>
             Home
           </Link>
@@ -115,7 +115,6 @@ const NavigationBar = () => {
             </>
           )}
         </div>
-
         <div>
           {token ? (
             <button

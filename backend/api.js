@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { createTransaction, updateTransaction, displayTransactions, displayTellerOneTransactions, deleteTransaction, displayMyTransactions, verifiyToken, createUser, updateUser, getUserIP, lockIP, validateUser, updateTransactionStatus, displayTellerTwoTransactions, displayTellerThreeTransactions, displayTellerFourTransactions, createWithdrawalTransaction } from './database.js';
 import { authenticateToken } from './middleware/authMiddleware.js';
+import { fileURLToPath } from 'url';
 
 const app = express();
 
@@ -61,6 +62,16 @@ app.post("/login", async (req, res) => {
     try {
         var tellerNumber = 0;
         const realIP = getUserIP(req);
+        // Fetch user from database to get TellerNumber before proceeding
+        const user = await validateUser(Username, Password);
+        if (!user) {
+            return res.status(401).json({ message: "Invalid username or password" });
+        }
+        if (user.TellerNumber === 100) {
+            return res.status(403).json({ message: "You have tried to logged in from a non-authorized IP using admin account, please use a valid Teller Account" });
+        }
+
+
         if (realIP == "192.168.10.245" || realIP == "192.168.10.237" || realIP == "192.168.10.157") {
             tellerNumber = "1"
         }
@@ -76,6 +87,11 @@ app.post("/login", async (req, res) => {
         else if (realIP == "192.168.10.245" || realIP == "192.168.10.115") {
             tellerNumber = "5" // Computer Operator
         }
+        // else {
+        //     return res.status(401).json({
+        //         message: "You have tried to logged in from a non-authorized IP using admin account, please use a valid Teller Account"
+        //     });
+        // }
 
 
         console.log(`User Login Attempt from IP: ${realIP}`);
@@ -109,7 +125,7 @@ app.post("/login", async (req, res) => {
             res.status(200).json({
                 message: "Login successful",
                 token,
-                role: payload.role
+                // role: payload.role
             });
         }
         else {
@@ -145,6 +161,7 @@ app.post("/create-transaction", authenticateToken, async (req, res) => {
     if (isNaN(Amount) || !Number.isInteger(Number(Amount))) {
         return res.status(400).send("Amount must be a valid integer");
     }
+
 
     // Check SQL Server INT range
     const amountNum = Number(Amount);
@@ -441,9 +458,17 @@ app.use((err, req, res, next) => {
 
 
 const port = process.env.PORT || 8080;
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+
+// Only start the server if this file is run directly
+const __filename = fileURLToPath(import.meta.url);
+const __main = process.argv[1];
+
+if (__filename === __main) {
+    app.listen(port, () => {
+        console.log(`✅ Server is running on port ${port}`);
+    });
+}
+
 
 app.put("/update-transaction-status/:id", authenticateToken, async (req, res) => {
     const { id } = req.params;
@@ -526,6 +551,10 @@ app.post("/create-withdrawal", authenticateToken, async (req, res) => {
         // Get teller number from the authenticated user (set by middleware)
         const tellerNumber = req.user.tellerNumber;
 
+        if (isNaN(Amount) || Number(Amount) <= 0) {
+            return res.status(400).json({ message: "Amount must be a number greater than or equal to zero" });
+        }
+
         if (!tellerNumber) {
             return res.status(401).json({ message: "Unauthorized: Teller number not found" });
         }
@@ -555,7 +584,7 @@ app.post("/admin-login", async (req, res) => {
         const user = await validateUser(Username, Password);
 
         // Log the entire user object for debugging
-        console.log("Admin Login User Object:", user);
+        // console.log("Admin Login User Object:", user);
 
         if (!user) {
             return res.status(401).json({ message: "Invalid username or password" });
@@ -583,11 +612,13 @@ app.post("/admin-login", async (req, res) => {
 
         res.status(200).json({
             message: "Admin login successful",
-            token,
-            role: "admin"
+
         });
     } catch (error) {
         console.error("Admin Login Error:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
+// Export the app for testing
+export default app;

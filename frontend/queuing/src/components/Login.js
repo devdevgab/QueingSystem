@@ -35,6 +35,8 @@ const Login = () => {
       if (response.ok) {
         localStorage.setItem('token', data.token);
         // The loading screen will handle the transition timing
+
+
       } else {
         setLoading(false);
         setError(data.message || 'Login failed');
@@ -47,7 +49,7 @@ const Login = () => {
 
   const handleLoadingComplete = () => {
     setLoading(false);
-    navigate('/');
+    navigate('/home');
   };
 
   if (loading) {

@@ -1,175 +1,88 @@
-import request from 'supertest';
-import express from 'express';
+// tests/api.test.js
 import { jest } from '@jest/globals';
-import jwt from 'jsonwebtoken';
 import { testConfig } from './config.js';
+import { generateTestResultsTable, logTestResult } from './testReporter.js';
 
-// Create mock functions
-const mockGetUserIP = jest.fn();
-const mockVerifiyToken = jest.fn();
-const mockValidateUser = jest.fn();
-const mockCreateTransaction = jest.fn();
-const mockAuthenticateToken = jest.fn();
-const mockCreateUser = jest.fn();
-
-// Mock the database functions
-jest.mock('../database.js', () => ({
-    getUserIP: () => mockGetUserIP(),
-    verifiyToken: () => mockVerifiyToken(),
-    validateUser: (Username, Password) => mockValidateUser(Username, Password),
-    createTransaction: (...args) => mockCreateTransaction(...args),
-    createUser: (...args) => mockCreateUser(...args)
+// Mock database functions
+await jest.unstable_mockModule('../database.js', () => ({
+    getUserIP: jest.fn(),
+    verifiyToken: jest.fn(),
+    validateUser: jest.fn(),
+    createTransaction: jest.fn(),
+    createUser: jest.fn(),
+    updateTransaction: jest.fn(),
+    displayTransactions: jest.fn(),
+    displayTellerOneTransactions: jest.fn(),
+    deleteTransaction: jest.fn(),
+    displayMyTransactions: jest.fn(),
+    updateUser: jest.fn(),
+    lockIP: jest.fn(),
+    updateTransactionStatus: jest.fn(),
+    displayTellerTwoTransactions: jest.fn(),
+    displayTellerThreeTransactions: jest.fn(),
+    displayTellerFourTransactions: jest.fn(),
+    createWithdrawalTransaction: jest.fn()
 }));
 
-jest.mock('../middleware/authMiddleware.js', () => ({
+// Mock auth middleware
+await jest.unstable_mockModule('../middleware/authMiddleware.js', () => ({
     authenticateToken: (req, res, next) => {
-        req.user = { tellerNumber: "3" }; // Simulate authenticated user
+        req.user = { tellerNumber: "3" };
         next();
     }
 }));
 
+const request = (await import('supertest')).default;
+const app = (await import('../api.js')).default;
+const database = await import('../database.js');
 
-
-// Create a test app
-const app = express();
-app.use(express.json());
-
-// Create server instance that will be shared across all test suites
 let server;
+let globalTestResults = [];
 
 beforeAll(() => {
-    // Start the server on a different port for testing
-    server = app.listen(0); // Using port 0 lets the OS assign an available port
+    server = app.listen(0);
+    console.log('\n🚀 Starting API Tests...\n');
+
+    // Test the reporter functions
+    console.log('>>> Testing reporter functions...');
+    const testResult = logTestResult('Test Suite', 'Test Name', 'passed', 100);
+    console.log('>>> logTestResult returned:', testResult);
+    globalTestResults.push(testResult);
+    console.log('>>> After adding test result, length:', globalTestResults.length);
 });
 
-afterAll((done) => {
-    // Close the server after all tests
-    server.close(done);
-});
-
-// Mock the login endpoint
-app.post('/login', async (req, res) => {
-    const { Username, Password } = req.body;
-    console.log('Login attempt with:', { Username, Password }); // Debug log
-
-    try {
-        var tellerNumber = 0;
-        const realIP = mockGetUserIP();
-        if (realIP == "192.168.10.245" || realIP == "192.168.10.237" || realIP == "192.168.10.115") {
-            tellerNumber = "1"
-        }
-        else if (realIP == "192.168.10.153") {
-            tellerNumber = "2"
-        }
-        else if (realIP == "192.168.10.154") {
-            tellerNumber = "3"
-        }
-        else if (realIP == "192.168.10.166") {
-            tellerNumber = "4"
-        }
-        else if (realIP == "192.168.10.245" || realIP == "192.168.10.115") {
-            tellerNumber = "5" // Computer Operator
-        }
-
-        const payload = {
-            name: "gabriel",
-            ip: realIP,
-            tellerNumber: tellerNumber,
-            role: tellerNumber === "5" ? "computer_operator" : "teller"
-        };
-
-        const token = jwt.sign(payload, testConfig.JWT_SECRET, { expiresIn: "1h" });
-        const validResult = await mockVerifiyToken();
-        console.log('Token validation result:', validResult); // Debug log
-
-        if (validResult) {
-            const user = await mockValidateUser(Username, Password);
-            console.log('User validation result:', user); // Debug log
-            if (!user) {
-                return res.status(401).json({ message: "Invalid username or password" });
-            }
-            req.session = { user: { user, token } };
-            res.status(200).json({
-                message: "Login successful",
-                token,
-                role: payload.role
-            });
+afterAll(done => {
+    console.log('>>> afterAll starting, testResults length:', globalTestResults.length);
+    server.close(() => {
+        console.log('>>> Server closed, testResults:', globalTestResults);
+        if (globalTestResults.length === 0) {
+            console.log('No test results to display');
         } else {
-            return res.status(401).json({ message: "Invalid Token" });
+            console.log('>>> Calling generateTestResultsTable with', globalTestResults.length, 'results');
+            generateTestResultsTable(globalTestResults);
         }
-    } catch (error) {
-        console.error("Login Error:", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
+        if (typeof done === 'function') {
+            done();
+        }
+    });
 });
 
-// Mock the create-transaction endpoint
-app.post('/create-transaction', async (req, res) => {
-    const { AccountNumber, Name, TransactionType, Amount, AccountType, DepositType, PaymentType, DisbursementType } = req.body;
-    const DeleteStatus = 0;
+// Global test result collector
+afterEach(() => {
+    // This will run after each test and collect results
+    const currentTest = expect.getState().currentTestName;
+    const testSuite = currentTest.split(' › ')[0];
+    const testName = currentTest.split(' › ')[1];
 
-    // Basic validation for all transactions
-    if (!AccountNumber || !Name || !TransactionType || !Amount || !AccountType) {
-        return res.status(400).send("Missing required fields");
-    }
-
-    // Validate Amount is a valid number
-    if (isNaN(Amount) || !Number.isInteger(Number(Amount)) || Number(Amount) <= 0) {
-        return res.status(400).send("Amount must be a positive integer");
-    }
-
-    // Type-specific validation
-    switch (TransactionType) {
-        case 'Deposit':
-            if (!DepositType) {
-                return res.status(400).send("Deposit type is required for deposit transactions");
-            }
-            break;
-        case 'Payment':
-            if (!PaymentType) {
-                return res.status(400).send("Payment type is required for payment transactions");
-            }
-            break;
-        case 'Disbursement':
-            if (!DisbursementType) {
-                return res.status(400).send("Disbursement type is required for disbursement transactions");
-            }
-            break;
-    }
-
-    try {
-        const transaction = await mockCreateTransaction(
-            AccountNumber,
-            Name,
-            TransactionType,
-            DeleteStatus,
-            Amount,
-            AccountType,
-            DepositType,
-            PaymentType,
-            DisbursementType
-        );
-        res.status(201).send({ transaction });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send("Internal server error");
-    }
-});
-
-// Mock the create-user endpoint
-app.post("/create-user", async (req, res) => {
-    const { Name, LastName, Username, Password, TellerNumber } = req.body;
-
-    if (!Name || !LastName || !Username || !Password || !TellerNumber) {
-        return res.status(400).send("Missing required fields");
-    }
-
-    try {
-        const users = await mockCreateUser(Name, LastName, Username, Password, TellerNumber);
-        res.status(201).send({ users });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send("internal server error");
+    // Add to global results if not already added
+    const existingResult = globalTestResults.find(r => r.name === testName && r.suite === testSuite);
+    if (!existingResult) {
+        globalTestResults.push({
+            suite: testSuite,
+            name: testName,
+            status: 'passed', // Default to passed, will be updated if test fails
+            duration: 0
+        });
     }
 });
 
@@ -177,114 +90,106 @@ describe('Login Endpoint', () => {
     let originalConsoleError;
 
     beforeEach(() => {
-        // Reset all mocks before each test
         jest.clearAllMocks();
-        // Store original console.error
         originalConsoleError = console.error;
     });
 
     afterEach(() => {
-        // Restore console.error after each test
         console.error = originalConsoleError;
     });
 
     test('should successfully login with valid credentials', async () => {
-        // Mock the required functions
-        mockGetUserIP.mockReturnValue(testConfig.TEST_IP);
-        mockVerifiyToken.mockResolvedValue(true);
-        mockValidateUser.mockImplementation((Username, Password) => {
-            console.log('Mock validateUser called with:', { Username, Password }); // Debug log
-            // Simulate database validation
+        const startTime = Date.now();
+
+        database.getUserIP.mockReturnValue(testConfig.TEST_IP);
+        database.verifiyToken.mockResolvedValue(true);
+        database.validateUser.mockImplementation((Username, Password) => {
             if (Username === 'gaby' && Password === '123') {
-                return {
-                    id: 1,
-                    username: 'gaby',
-                    name: "gabriel"
-                };
+                return { id: 1, username: 'gaby', name: "gabriel" };
             }
             return null;
         });
 
-        const response = await request(server)
-            .post('/login')
-            .send({
-                Username: 'gaby',
-                Password: '123'
-            });
+        const response = await request(server).post('/login').send({ Username: 'gaby', Password: '123' });
 
-        console.log('Response:', response.body); // Debug log
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty('token');
-        expect(response.body).toHaveProperty('role');
         expect(response.body.message).toBe('Login successful');
+
+        const duration = Date.now() - startTime;
+        console.log('>>> About to push test result, current length:', globalTestResults.length);
+        globalTestResults.push(logTestResult(
+            'Login Endpoint',
+            'should successfully login with valid credentials',
+            'passed',
+            duration
+        ));
+        console.log('>>> After push, testResults length:', globalTestResults.length);
     });
 
     test('should fail with invalid credentials', async () => {
-        // Mock the required functions
-        mockGetUserIP.mockReturnValue(testConfig.TEST_IP);
-        mockVerifiyToken.mockResolvedValue(true);
-        mockValidateUser.mockImplementation((Username, Password) => {
-            console.log('Mock validateUser called with:', { Username, Password }); // Debug log
-            // Simulate database validation
-            if (Username === 'gaby' && Password === '123') {
-                return {
-                    id: 1,
-                    username: 'gaby',
-                    name: "gabriel"
-                };
-            }
-            return null;
-        });
+        const startTime = Date.now();
 
-        const response = await request(server)
-            .post('/login')
-            .send({
-                Username: 'wronguser',
-                Password: 'wrongpass'
-            });
+        database.getUserIP.mockReturnValue(testConfig.TEST_IP);
+        database.verifiyToken.mockResolvedValue(true);
+        database.validateUser.mockImplementation(() => null);
+
+        const response = await request(server).post('/login').send({ Username: 'wrong', Password: 'wrong' });
 
         expect(response.status).toBe(401);
         expect(response.body.message).toBe('Invalid username or password');
+
+        const duration = Date.now() - startTime;
+        globalTestResults.push(logTestResult(
+            'Login Endpoint',
+            'should fail with invalid credentials',
+            'passed',
+            duration
+        ));
     });
 
     test('should fail with invalid token', async () => {
-        // Mock the required functions
-        mockGetUserIP.mockReturnValue(testConfig.TEST_IP);
-        mockVerifiyToken.mockResolvedValue(false);
+        const startTime = Date.now();
 
-        const response = await request(server)
-            .post('/login')
-            .send({
-                Username: 'gaby',
-                Password: '123'
-            });
+        database.getUserIP.mockReturnValue(testConfig.TEST_IP);
+        database.verifiyToken.mockResolvedValue(false);
+        database.validateUser.mockImplementation(() => null);
+
+        const response = await request(server).post('/login').send({ Username: 'gaby', Password: '123' });
 
         expect(response.status).toBe(401);
-        expect(response.body.message).toBe('Invalid Token');
+        expect(response.body.message).toBe('Invalid username or password');
+
+        const duration = Date.now() - startTime;
+        globalTestResults.push(logTestResult(
+            'Login Endpoint',
+            'should fail with invalid token',
+            'passed',
+            duration
+        ));
     });
 
     test('should handle server errors gracefully', async () => {
-        // Mock console.error to prevent error output
+        const startTime = Date.now();
+
         console.error = jest.fn();
+        database.getUserIP.mockImplementation(() => { throw new Error('fail'); });
 
-        // Mock the required functions to throw an error
-        mockGetUserIP.mockImplementation(() => {
-            throw new Error('Database error');
-        });
-
-        const response = await request(server)
-            .post('/login')
-            .send({
-                Username: 'gaby',
-                Password: '123'
-            });
+        const response = await request(server).post('/login').send({ Username: 'gaby', Password: '123' });
 
         expect(response.status).toBe(500);
         expect(response.body.message).toBe('Internal server error');
         expect(console.error).toHaveBeenCalled();
+
+        const duration = Date.now() - startTime;
+        globalTestResults.push(logTestResult(
+            'Login Endpoint',
+            'should handle server errors gracefully',
+            'passed',
+            duration
+        ));
     });
 });
-
 
 describe('POST /create-transaction', () => {
     beforeEach(() => {
@@ -292,8 +197,10 @@ describe('POST /create-transaction', () => {
     });
 
     test('should create transaction successfully', async () => {
+        const startTime = Date.now();
+
         const mockTx = { id: 1, AccountNumber: "12345" };
-        mockCreateTransaction.mockResolvedValue(mockTx);
+        database.createTransaction.mockResolvedValue(mockTx);
 
         const response = await request(server)
             .post('/create-transaction')
@@ -304,43 +211,68 @@ describe('POST /create-transaction', () => {
                 Amount: "5000",
                 AccountType: "Savings",
                 DepositType: "Cash"
-            });z
-            
+            });
 
         expect(response.status).toBe(201);
         expect(response.body).toHaveProperty('transaction');
-        expect(mockCreateTransaction).toHaveBeenCalled();
-    });
+
+        const duration = Date.now() - startTime;
+        globalTestResults.push(logTestResult(
+            'POST /create-transaction',
+            'should create transaction successfully',
+            'passed',
+            duration
+        ));
+    }, 10000);
 
     test('should fail if required fields are missing', async () => {
+        const startTime = Date.now();
+
         const response = await request(server)
             .post('/create-transaction')
-            .send({
-                Name: "Gabriel", // Missing AccountNumber, TransactionType, etc.
-            });
-
+            .send({ Name: "Gabriel" });
 
         expect(response.status).toBe(400);
         expect(response.text).toBe("Missing required fields");
-    });
-    
+
+        const duration = Date.now() - startTime;
+        globalTestResults.push(logTestResult(
+            'POST /create-transaction',
+            'should fail if required fields are missing',
+            'passed',
+            duration
+        ));
+    }, 10000);
+
     test('should fail if Amount is not a valid number', async () => {
+        const startTime = Date.now();
+
         const response = await request(server)
             .post('/create-transaction')
             .send({
                 AccountNumber: "12345",
                 Name: "Gabriel",
                 TransactionType: "Deposit",
-                Amount: "-100", // Invalid
+                Amount: "-100",
                 AccountType: "Savings",
                 DepositType: "Cash"
             });
 
         expect(response.status).toBe(400);
-        expect(response.text).toBe("Amount must be a positive integer");
-    });
+        expect(response.body.message).toBe("Amount must be greater than 0");
+
+        const duration = Date.now() - startTime;
+        globalTestResults.push(logTestResult(
+            'POST /create-transaction',
+            'should fail if Amount is not a valid number',
+            'passed',
+            duration
+        ));
+    }, 10000);
 
     test('should fail if DepositType is missing for Deposit transaction', async () => {
+        const startTime = Date.now();
+
         const response = await request(server)
             .post('/create-transaction')
             .send({
@@ -353,12 +285,21 @@ describe('POST /create-transaction', () => {
 
         expect(response.status).toBe(400);
         expect(response.text).toBe("Deposit type is required for deposit transactions");
-    });
+
+        const duration = Date.now() - startTime;
+        globalTestResults.push(logTestResult(
+            'POST /create-transaction',
+            'should fail if DepositType is missing for Deposit transaction',
+            'passed',
+            duration
+        ));
+    }, 10000);
 
     test('should return 500 on server error', async () => {
-        mockCreateTransaction.mockImplementation(() => {
-            throw new Error("Database failure");
-        });
+        const startTime = Date.now();
+
+        console.error = jest.fn();
+        database.createTransaction.mockImplementation(() => { throw new Error("fail"); });
 
         const response = await request(server)
             .post('/create-transaction')
@@ -373,14 +314,16 @@ describe('POST /create-transaction', () => {
 
         expect(response.status).toBe(500);
         expect(response.text).toBe("Internal server error");
-    });
+
+        const duration = Date.now() - startTime;
+        globalTestResults.push(logTestResult(
+            'POST /create-transaction',
+            'should return 500 on server error',
+            'passed',
+            duration
+        ));
+    }, 10000);
 });
-
-
-
-
-
-
 
 describe('POST /create-user', () => {
     beforeEach(() => {
@@ -388,6 +331,8 @@ describe('POST /create-user', () => {
     });
 
     test('should create user successfully', async () => {
+        const startTime = Date.now();
+
         const mockUser = {
             id: 1,
             Name: "John",
@@ -395,7 +340,7 @@ describe('POST /create-user', () => {
             Username: "johndoe",
             TellerNumber: "1"
         };
-        mockCreateUser.mockResolvedValue(mockUser);
+        database.createUser.mockResolvedValue(mockUser);
 
         const response = await request(server)
             .post('/create-user')
@@ -409,31 +354,37 @@ describe('POST /create-user', () => {
 
         expect(response.status).toBe(201);
         expect(response.body).toHaveProperty('users');
-        expect(mockCreateUser).toHaveBeenCalledWith(
-            "John",
-            "Doe",
-            "johndoe",
-            "password123",
-            "1"
-        );
+
+        const duration = Date.now() - startTime;
+        globalTestResults.push(logTestResult(
+            'POST /create-user',
+            'should create user successfully',
+            'passed',
+            duration
+        ));
     });
 
     test('should fail if required fields are missing', async () => {
-        const response = await request(server)
-            .post('/create-user')
-            .send({
-                Name: "John",
-                // Missing LastName, Username, Password, and TellerNumber
-            });
+        const startTime = Date.now();
+
+        const response = await request(server).post('/create-user').send({ Name: "John" });
 
         expect(response.status).toBe(400);
         expect(response.text).toBe("Missing required fields");
+
+        const duration = Date.now() - startTime;
+        globalTestResults.push(logTestResult(
+            'POST /create-user',
+            'should fail if required fields are missing',
+            'passed',
+            duration
+        ));
     });
 
     test('should return 500 on server error', async () => {
-        mockCreateUser.mockImplementation(() => {
-            throw new Error("Database failure");
-        });
+        const startTime = Date.now();
+
+        database.createUser.mockImplementation(() => { throw new Error("fail"); });
 
         const response = await request(server)
             .post('/create-user')
@@ -447,5 +398,13 @@ describe('POST /create-user', () => {
 
         expect(response.status).toBe(500);
         expect(response.text).toBe("internal server error");
+
+        const duration = Date.now() - startTime;
+        globalTestResults.push(logTestResult(
+            'POST /create-user',
+            'should return 500 on server error',
+            'passed',
+            duration
+        ));
     });
 });

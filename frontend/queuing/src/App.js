@@ -20,7 +20,8 @@ const App = () => {
       <div className="app">
         <NavigationBar />
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Login />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/transactions" element={<DisplayTransactionPage />} />
           <Route path="/mytransactions" element={<MyTransactionPage />} />
