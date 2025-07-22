@@ -2,8 +2,7 @@
 :root {
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
-  --bg-backgroundLightMode: #2d3748;
-  --bg-tertiary: #f1f5f9;
+  --bg-backgroundLightMode: #2d3748 --bg-tertiary: #f1f5f9;
   --text-primary: #2d3748;
   --text-secondary: #4a5568;
   --text-muted: #718096;
