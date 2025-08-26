@@ -260,12 +260,12 @@ const ComputerOperatorPage = () => {
                     Create Disbursement
                 </button> */}
 
-                <button
+                {/* <button
                     className={`tab-button ${activeTab === 'payment' ? 'active' : ''}`}
                     onClick={() => setActiveTab('payment')}
                 >
                     Create Payment
-                </button>
+                </button> */}
             </div>
 
             <div className="form-container">
