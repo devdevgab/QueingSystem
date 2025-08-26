@@ -7,7 +7,7 @@ export const testConfig = {
     // Test Credentials
     TEST_USERNAME: 'gaby',
     TEST_PASSWORD: '123',
-    TEST_IP: '192.168.10.245',
+    TEST_IP: '192.168.10.199',
 
     // Test Database Configuration (if needed)
     // TEST_DB_HOST: 'localhost',

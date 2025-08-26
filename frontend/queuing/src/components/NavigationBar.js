@@ -22,7 +22,7 @@ const NavigationBar = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('http://192.168.10.245:8080/logout', {
+      const response = await fetch('http://192.168.10.199:8080/logout', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

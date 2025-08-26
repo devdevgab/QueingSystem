@@ -1,7 +1,7 @@
 # PowerShell script to test login endpoint
 
 # Define the endpoint URL
-$uri = "http://192.168.10.245:8080/login"
+$uri = "http://192.168.10.199:8080/login"
 
 # Set the headers
 $headers = @{

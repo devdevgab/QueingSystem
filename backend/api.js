@@ -24,7 +24,7 @@ app.use(bodyParser.urlencoded({
 dotenv.config();
 
 const corsOptions = {
-    origin: "http://192.168.10.245:3000",
+    origin: "http://192.168.10.199:3000",
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -72,7 +72,7 @@ app.post("/login", async (req, res) => {
         }
 
 
-        if (realIP == "192.168.10.245" || realIP == "192.168.10.237" || realIP == "192.168.10.157") {
+        if (realIP == "192.168.10.199" || realIP == "192.168.10.237" || realIP == "192.168.10.157" || "192.168.10.115") {
             tellerNumber = "1"
         }
         else if (realIP == "192.168.10.24") {
@@ -84,14 +84,17 @@ app.post("/login", async (req, res) => {
         else if (realIP == "192.168.10.166") {
             tellerNumber = "4"
         }
-        else if (realIP == "192.168.10.245" || realIP == "192.168.10.115") {
+        else if (realIP == "192.168.10.199" || realIP == "192.168.10.115") {
             tellerNumber = "5" // Computer Operator
         }
-        // else {
-        //     return res.status(401).json({
-        //         message: "You have tried to logged in from a non-authorized IP using admin account, please use a valid Teller Account"
-        //     });
-        // }
+        else {
+            console.log("Unauthorized IP Login Attempt:", realIP);
+            return res.status(401).json({
+                message: "You have tried to logged in from a non-authorized IP using admin account, please use a valid Teller Account"
+            });
+        }
+
+        
 
 
         console.log(`User Login Attempt from IP: ${realIP}`);

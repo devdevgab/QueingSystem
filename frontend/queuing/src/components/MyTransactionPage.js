@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import '../css/MyTransactionPageStyles.css';
 
-const API_URL = 'http://192.168.10.245:8080';
+const API_URL = 'http://192.168.10.199:8080';
 const POLLING_INTERVAL = 5000; // 5 seconds
 
 const MyTransactionPage = () => {

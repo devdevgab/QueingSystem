@@ -60,7 +60,7 @@ const CreateAccount = () => {
         setAdminLoading(true);
 
         try {
-            const response = await fetch('http://192.168.10.245:8080/admin-login', {
+            const response = await fetch('http://192.168.10.199:8080/admin-login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ const CreateAccount = () => {
         setLoading(true);
         setSuccess('');
         try {
-            const response = await fetch('http://192.168.10.245:8080/create-user', {
+            const response = await fetch('http://192.168.10.199:8080/create-user', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

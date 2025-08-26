@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../css/ComputerOperatorPageStyles.css';
 
-const API_URL = 'http://192.168.10.245:8080';
+const API_URL = 'http://192.168.10.199:8080';
 
 const ComputerOperatorPage = () => {
     const [activeTab, setActiveTab] = useState('withdrawal');

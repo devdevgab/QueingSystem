@@ -37,7 +37,7 @@ const DisplayTransactionPage = () => {
           throw new Error('No authentication token found');
         }
 
-        const response = await fetch('http://192.168.10.245:8080/display-transactions', {
+        const response = await fetch('http://192.168.10.199:8080/display-transactions', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
